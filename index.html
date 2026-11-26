@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="artifact-type" content="dashboard">
+<meta name="design-style" content="kiln">
+<title>樹林美食散步地圖｜五大區域 25 家在地名店實景誌</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+
+  /* 1. Kiln style tokens: unbleached linen and river clay */
+  --background: #f4f1ea;
+  --surface-container-low: #ebe6db;
+  --surface-container: #e3ddd0;
+  --surface-container-high: #d9d1c2;
+  --surface-paper: #f9f7f2;
+
+  /* Ink */
+  --on-surface: #1c1b18;
+  --on-surface-variant: #5e5a51;
+
+  /* Rules */
+  --outline: #1c1b18;
+  --outline-variant: #d2cbbd;
+
+  /* Accents */
+  --primary: #1c1b18;
+  --on-primary: #f4f1ea;
+  --primary-container: #ebe6db;
+  --on-primary-container: #1c1b18;
+  --secondary: #4a5d46;
+  --on-secondary: #f4f1ea;
+  --secondary-soft: #dfe5dc;
+  --tertiary: #9e3b2b;
+  --on-tertiary: #f4f1ea;
+  --tertiary-soft: #f3e2de;
+  --error: #9e2a22;
+  --on-error: #f4f1ea;
+
+  /* Data series */
+  --data-1: #4a5d46;
+  --data-2: #9e3b2b;
+  --data-3: #1c1b18;
+  --data-4: #8a6f48;
+  --data-5: #3b596a;
+  --data-context: #c7bfb0;
+
+  /* Fonts (Traditional Chinese primary + Kiln monograph voices) */
+  --font-headline: 'Noto Serif TC', 'Shippori Mincho', serif;
+  --font-body: 'Noto Sans TC', 'Plus Jakarta Sans', sans-serif;
+  --font-label: 'Geist Mono', 'Noto Sans TC', monospace;
+
+  /* Shape */
+  --rounded: 0.125rem;
+  --rounded-lg: 0.125rem;
+  --rounded-full: 0.125rem;
+
+  /* Style effects */
+  --rule-sumi-left: 2px solid var(--outline);
+  --rule-moss-left: 3px solid var(--secondary);
+  --rule-cinnabar-left: 3px solid var(--tertiary);
+  --rule-sumi: 1px solid var(--outline);
+  --rule-linen: 1px solid var(--outline-variant);
+  --label-tracking: 0.12em;
+  --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--secondary);
+
+  /* 3. Shared tokens */
+  --positive: #3d6342;
+  --warning: #9a6b24;
+  --focus: #4a5d46;
+
+  /* Type scale (Dashboard / Data Explorer) */
+  --display-size: clamp(1.85rem, 1.45rem + 1.5vw, 2.5rem);
+  --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+  --label-size: 0.75rem;
+
+  /* Spacing scale (4pt base) */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+}
+
+/* Base reset */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; margin: 0; padding: 0; }
+header { position: static !important; }
+
+body {
+  background-color: var(--background);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.page-grid {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  max-width: 1280px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+.page-grid * { min-width: 0; }
+
+/* Masthead */
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: var(--rule-sumi);
+}
+
+.masthead-main {
+  flex: 1;
+  max-width: 68ch;
+}
+
+.kicker {
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  font-weight: 500;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--label-tracking);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.display-title {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: var(--display-size);
+  line-height: 1.15;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+.subhead-moss {
+  font-family: var(--font-headline);
+  font-weight: 500;
+  font-size: var(--subhead-size);
+  color: var(--secondary);
+  line-height: 1.45;
+  margin: var(--space-sm) 0 0 0;
+}
+
+.seal-stamp {
+  border: 1px solid var(--tertiary);
+  color: var(--tertiary);
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.14em;
+  padding: 0.5rem 0.375rem;
+  writing-mode: vertical-rl;
+  border-radius: var(--rounded);
+  background: var(--surface-paper);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* KPI Strip */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.washi-card {
+  background: var(--surface-container-low);
+  border-left: var(--rule-sumi-left);
+  border-radius: var(--rounded);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.washi-card.is-accent {
+  border-left: var(--rule-cinnabar-left);
+}
+
+.kpi-label {
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  color: var(--on-surface-variant);
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+.kpi-value {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: clamp(1.375rem, 1.15rem + 0.8vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--on-surface);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.kpi-note {
+  color: var(--secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-top: var(--space-xs);
+}
+
+/* Filter Console */
+.filter-panel {
+  background: var(--surface-paper);
+  border: var(--rule-linen);
+  border-left: var(--rule-sumi-left);
+  border-radius: var(--rounded);
+  padding: var(--space-md) var(--space-lg);
+  display: grid;
+  gap: var(--space-md);
+}
+
+.filter-group-label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-xs);
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.zone-btn, .tag-btn, .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--rounded);
+  border: var(--rule-linen);
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.zone-btn:hover, .tag-btn:hover, .action-btn:hover {
+  background: var(--surface-container-high);
+}
+
+.zone-btn.is-active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.tag-btn.is-active {
+  background: var(--secondary);
+  color: var(--on-secondary);
+  border-color: var(--secondary);
+}
+
+.action-btn.is-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.action-btn.is-primary:hover {
+  background: var(--secondary);
+  border-color: var(--secondary);
+}
+
+.action-btn.is-cinnabar-active {
+  background: var(--tertiary);
+  color: var(--on-tertiary);
+  border-color: var(--tertiary);
+}
+
+.zone-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--rounded);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.filter-controls-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) auto;
+  gap: var(--space-md);
+  align-items: end;
+}
+
+.search-wrap {
+  position: relative;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: var(--rule-sumi);
+  border-radius: var(--rounded);
+  background: var(--background);
+  color: var(--on-surface);
+  font-size: 0.9375rem;
+}
+
+.text-input::placeholder {
+  color: var(--on-surface-variant);
+}
+
+/* Status Banner */
+.status-banner {
+  display: none;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--secondary-soft);
+  border-left: var(--rule-moss-left);
+  border-radius: var(--rounded);
+  font-size: 0.875rem;
+  color: var(--on-surface);
+}
+.status-banner.is-visible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+/* Split Map + Inspector Stage */
+.explorer-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.map-panel {
+  background: var(--surface-paper);
+  border: var(--rule-linen);
+  border-radius: var(--rounded);
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--rule-linen);
+}
+
+.panel-title {
+  font-family: var(--font-headline);
+  font-size: var(--headline-size);
+  font-weight: 600;
+  margin: 0;
+}
+
+.panel-subtitle {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.map-viewport {
+  position: relative;
+  background: var(--background);
+  border: var(--rule-linen);
+  border-radius: var(--rounded);
+  min-height: 460px;
+  overflow: hidden;
+}
+
+#shulin-map-svg {
+  width: 100%;
+  height: 460px;
+  display: block;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  padding-top: var(--space-xs);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* SVG Map interactive elements */
+.map-pin-group {
+  cursor: pointer;
+  transition: opacity var(--dur-short) var(--ease-out);
+}
+
+.map-pin-group.is-dimmed {
+  opacity: 0.22;
+}
+
+.map-pin-circle {
+  transition: transform var(--dur-micro) var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.map-pin-group:hover .map-pin-circle,
+.map-pin-group.is-selected .map-pin-circle {
+  transform: scale(1.22);
+}
+
+/* Spotlight Inspector */
+.inspector-panel {
+  background: var(--surface-container-low);
+  border: var(--rule-linen);
+  border-left: var(--rule-cinnabar-left);
+  border-radius: var(--rounded);
+  overflow: hidden;
+  display: grid;
+}
+
+.inspector-visual-wrap {
+  position: relative;
+  background: var(--on-surface);
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  border-bottom: var(--rule-linen);
+}
+
+.scene-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scene-badge {
+  position: absolute;
+  top: var(--space-sm);
+  left: var(--space-sm);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--rounded);
+  opacity: 0.92;
+}
+
+.scene-zone-chip {
+  position: absolute;
+  bottom: var(--space-sm);
+  right: var(--space-sm);
+  background: var(--surface-paper);
+  color: var(--on-surface);
+  border: var(--rule-sumi);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--rounded);
+}
+
+.inspector-body {
+  padding: var(--space-md) var(--space-lg);
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.inspector-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.inspector-title {
+  font-family: var(--font-headline);
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.address-line {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.highlight-box {
+  background: var(--surface-paper);
+  border: var(--rule-linen);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--rounded);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.dish-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.dish-tag {
+  display: inline-block;
+  background: var(--background);
+  border: var(--rule-linen);
+  color: var(--on-surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--rounded);
+}
+
+.dish-tag.is-signature {
+  border-color: var(--tertiary);
+  background: var(--tertiary-soft);
+  color: var(--tertiary);
+  font-weight: 600;
+}
+
+.inspector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: var(--rule-linen);
+}
+
+.nav-pair {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* Section Heading */
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: var(--rule-sumi);
+}
+
+.section-title {
+  font-family: var(--font-headline);
+  font-size: var(--headline-size);
+  font-weight: 600;
+  margin: 0;
+}
+
+.result-count {
+  font-family: var(--font-label);
+  font-size: 0.875rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+/* Storefront Card Grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: var(--space-lg);
+}
+
+.shop-card-wrapper {
+  container-type: inline-size;
+}
+
+.shop-card {
+  height: 100%;
+  background: var(--surface-paper);
+  border: var(--rule-linen);
+  border-left: var(--rule-sumi-left);
+  border-radius: var(--rounded);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: background-color var(--dur-short) var(--ease-out), box-shadow var(--dur-short) var(--ease-out);
+}
+
+.shop-card:hover {
+  background: var(--surface-container-low);
+}
+
+.shop-card.is-selected {
+  border-left: var(--rule-cinnabar-left);
+  box-shadow: 0 0 0 1px var(--tertiary);
+}
+
+.card-visual-box {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--on-surface);
+  overflow: hidden;
+  border-bottom: var(--rule-linen);
+  cursor: pointer;
+}
+
+.card-body {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  color: var(--secondary);
+}
+
+.card-title {
+  font-family: var(--font-headline);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.card-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+}
+
+.card-highlight {
+  font-size: 0.875rem;
+  color: var(--on-surface);
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+
+.card-dishes-block {
+  padding-top: var(--space-xs);
+  border-top: var(--rule-linen);
+}
+
+.card-dishes-label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-xs);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: var(--rule-linen);
+  margin-top: auto;
+}
+
+.card-btn {
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--rounded);
+  border: var(--rule-linen);
+  background: var(--surface-container-low);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.card-btn:hover {
+  background: var(--surface-container-high);
+}
+
+.card-btn.is-fav {
+  background: var(--tertiary-soft);
+  color: var(--tertiary);
+  border-color: var(--tertiary);
+}
+
+/* Empty State */
+.empty-state {
+  display: none;
+  background: var(--surface-container-low);
+  border-left: var(--rule-cinnabar-left);
+  padding: var(--space-xl);
+  border-radius: var(--rounded);
+  text-align: left;
+  gap: var(--space-sm);
+}
+
+.empty-state.is-visible {
+  display: grid;
+}
+
+/* Analytics & Route Strip */
+.insight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+.chart-card {
+  background: var(--surface-paper);
+  border: var(--rule-linen);
+  border-left: var(--rule-sumi-left);
+  border-radius: var(--rounded);
+  padding: var(--space-md) var(--space-lg);
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.chart-container {
+  position: relative;
+  min-height: 260px;
+  height: 260px;
+}
+
+.route-cards {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.route-item {
+  background: var(--surface-container-low);
+  border-left: var(--rule-moss-left);
+  padding: var(--space-md);
+  border-radius: var(--rounded);
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.route-item h3 {
+  font-family: var(--font-headline);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.route-stops {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+/* Footer */
+.sources-footer {
+  border-top: var(--rule-linen);
+  padding-top: var(--space-md);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  line-height: 1.7;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .explorer-stage,
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+  .filter-controls-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-grid {
+    padding: var(--space-sm);
+    gap: var(--space-md);
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .masthead {
+    flex-direction: row;
+  }
+  .seal-stamp {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.25rem;
+  }
+  .map-viewport {
+    min-height: 360px;
+  }
+  #shulin-map-svg {
+    height: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Storefront photo / map links (v4) */
+a.card-btn { text-decoration: none; color: inherit; }
+.card-links { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding-top: var(--space-sm); }
+.card-links .card-btn { min-height: 40px; padding: 0.3rem 0.6rem; font-size: 0.78rem; flex: 1 1 auto; justify-content: center; }
+.photo-modal { position: fixed; inset: 0; background: rgba(28,27,24,0.62); display: none; align-items: center; justify-content: center; z-index: 1000; padding: var(--space-md); }
+.photo-modal.is-open { display: flex; }
+.photo-dialog { background: var(--surface-paper); border: var(--rule-sumi); border-left: var(--rule-cinnabar-left); border-radius: var(--rounded); width: min(520px, 100%); max-height: 92vh; overflow: auto; padding: var(--space-lg); display: grid; gap: var(--space-md); }
+.photo-dialog h3 { font-family: var(--font-headline); margin: 0; font-size: 1.2rem; }
+.photo-dialog p { margin: 0; font-size: 0.85rem; color: var(--on-surface-variant); }
+.photo-dialog label { font-family: var(--font-label); font-size: var(--label-size); color: var(--on-surface-variant); display: block; margin-bottom: 4px; }
+.photo-dialog input[type=text], .photo-dialog input[type=url] { width: 100%; min-height: 44px; padding: 0.45rem 0.6rem; border: var(--rule-sumi); border-radius: var(--rounded); background: #fff; font-size: 0.9rem; }
+.photo-preview { width: 100%; aspect-ratio: 16 / 9; background: var(--on-surface); border-radius: var(--rounded); overflow: hidden; }
+.photo-preview canvas { width: 100%; height: 100%; display: block; }
+.photo-row { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.photo-row .card-btn { flex: 1 1 auto; justify-content: center; }
+
+/* Embedded Google Map as the default storefront view */
+.scene-map { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #e5e3df; display: none; z-index: 1; }
+.mode-map .scene-map { display: block; }
+.mode-map .scene-canvas { visibility: hidden; }
+.scene-badge, .scene-zone-chip { z-index: 3; }
+.scene-view-tabs { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 4px; z-index: 3; }
+.scene-view-tabs button { min-height: 32px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600; background: var(--surface-paper); color: var(--on-surface); border: var(--rule-sumi); border-radius: var(--rounded); cursor: pointer; }
+.scene-view-tabs button.is-active { background: var(--primary); color: var(--on-primary); }
+</style>
+</head>
+<body>
+
+<main class="page-grid">
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="masthead-main">
+      <p class="kicker">SHULIN CULINARY ATLAS · FIVE ZONES · 25 STOPS</p>
+      <h1 class="display-title">樹林美食散步地圖：五大區域 25 家在地名店實景誌</h1>
+      <p class="subhead-moss">以樹林火車站為核心，串聯前站博愛街夜市、主幹道小吃、後站巷弄老字號、秀泰商場與紅磚景觀秘境</p>
+    </div>
+    <div class="seal-stamp" aria-hidden="true">樹林食誌 廿五選</div>
+  </header>
+
+  <!-- KPI Summary Strip -->
+  <section class="kpi-grid" aria-label="美食地圖概覽指標">
+    <div class="washi-card">
+      <span class="kpi-label">CURATED SPOTS</span>
+      <div class="kpi-value">25 家名店</div>
+      <div class="kpi-note">5 大分區每區嚴選 5 家</div>
+    </div>
+    <div class="washi-card">
+      <span class="kpi-label">HERITAGE SPAN</span>
+      <div class="kpi-value">20–38 年</div>
+      <div class="kpi-note">橫跨二代傳承夜市老字號</div>
+    </div>
+    <div class="washi-card">
+      <span class="kpi-label">ACTIVE FILTER</span>
+      <div class="kpi-value" id="kpi-visible-count">25 / 25</div>
+      <div class="kpi-note" id="kpi-active-zone-note">顯示全部五大美食生活圈</div>
+    </div>
+    <div class="washi-card is-accent">
+      <span class="kpi-label">MY FOOD WALK</span>
+      <div class="kpi-value" id="kpi-fav-count">0 家已收藏</div>
+      <div class="kpi-note">點選愛心建立專屬樹林行程</div>
+    </div>
+  </section>
+
+  <!-- Interactive Filter Panel -->
+  <section class="filter-panel" aria-label="互動分類與條件篩選">
+    <div>
+      <span class="filter-group-label">步驟 01｜依五大區域與主題分類篩選</span>
+      <div class="pill-row" id="zone-pills">
+        <button type="button" class="zone-btn is-active" data-zone="all" onclick="setZoneFilter('all')">
+          全部區域 (25)
+        </button>
+        <button type="button" class="zone-btn" data-zone="1" onclick="setZoneFilter('1')">
+          <span class="zone-dot" style="background: var(--data-2);"></span>
+          1. 前站 &amp; 博愛街夜市 (5)
+        </button>
+        <button type="button" class="zone-btn" data-zone="2" onclick="setZoneFilter('2')">
+          <span class="zone-dot" style="background: var(--data-1);"></span>
+          2. 車站周邊與主幹道 (5)
+        </button>
+        <button type="button" class="zone-btn" data-zone="3" onclick="setZoneFilter('3')">
+          <span class="zone-dot" style="background: var(--data-4);"></span>
+          3. 後站與巷弄老字號 (5)
+        </button>
+        <button type="button" class="zone-btn" data-zone="4" onclick="setZoneFilter('4')">
+          <span class="zone-dot" style="background: var(--data-5);"></span>
+          4. 樹林秀泰生活廣場 (5)
+        </button>
+        <button type="button" class="zone-btn" data-zone="5" onclick="setZoneFilter('5')">
+          <span class="zone-dot" style="background: var(--data-3);"></span>
+          5. 文青老宅與景觀秘境 (5)
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-controls-row">
+      <div>
+        <span class="filter-group-label">步驟 02｜用餐時段與餐點風格</span>
+        <div class="pill-row" id="tag-pills">
+          <button type="button" class="tag-btn is-active" data-tag="all" onclick="setTagFilter('all')">全部風格</button>
+          <button type="button" class="tag-btn" data-tag="夜市／宵夜" onclick="setTagFilter('夜市／宵夜')">夜市／宵夜</button>
+          <button type="button" class="tag-btn" data-tag="銅板小吃" onclick="setTagFilter('銅板小吃')">銅板小吃</button>
+          <button type="button" class="tag-btn" data-tag="正餐／便當" onclick="setTagFilter('正餐／便當')">正餐／便當</button>
+          <button type="button" class="tag-btn" data-tag="咖啡／甜點" onclick="setTagFilter('咖啡／甜點')">咖啡／甜點</button>
+          <button type="button" class="tag-btn" data-tag="親子／聚餐" onclick="setTagFilter('親子／聚餐')">親子／聚餐</button>
+        </div>
+      </div>
+
+      <div class="search-wrap">
+        <label class="filter-group-label" for="shop-search">步驟 03｜搜尋店名、路名或必點菜色</label>
+        <input id="shop-search" type="search" class="text-input" placeholder="例如：起司、當歸鴨、水豚、博愛街、蛋撻…" oninput="onSearchInput(this.value)">
+      </div>
+
+      <div>
+        <span class="filter-group-label">散步清單工具</span>
+        <div class="pill-row">
+          <button type="button" id="btn-only-fav" class="action-btn" onclick="toggleOnlyFavorites()">
+            <i data-lucide="heart" width="16" height="16"></i>
+            只看收藏
+          </button>
+          <button type="button" class="action-btn is-primary" onclick="exportFavoritesCsv()">
+            <i data-lucide="download" width="16" height="16"></i>
+            匯出 CSV
+          </button>
+          <button type="button" class="action-btn" onclick="resetAllFilters()">
+            重設篩選
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-banner" class="status-banner" role="status" aria-live="polite">
+      <span id="status-banner-text"></span>
+      <button type="button" class="card-btn" onclick="hideStatusBanner()">關閉提示</button>
+    </div>
+  </section>
+
+  <!-- Interactive Map + Live Shop Spotlight -->
+  <section class="explorer-stage" aria-label="互動相對位置示意圖與店家實景檢視">
+    <div class="map-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">樹林火車站輻射美食示意圖</h2>
+          <p class="panel-subtitle">依台鐵前站／後站相對方位與距離圈繪製之導覽示意圖（非精確街道測繪），點選座標點即時檢視實景與招牌菜</p>
+        </div>
+        <div class="pill-row">
+          <button type="button" class="card-btn" onclick="focusMapRegion('overview')">全景</button>
+          <button type="button" class="card-btn" onclick="focusMapRegion('front')">前站商圈</button>
+          <button type="button" class="card-btn" onclick="focusMapRegion('back')">後站與秘境</button>
+        </div>
+      </div>
+
+      <div class="map-viewport">
+        <svg id="shulin-map-svg" viewBox="0 0 800 520" role="img" aria-label="樹林五大區域 25 家美食相對位置導覽示意圖">
+          <defs>
+            <pattern id="carto-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d2cbbd" stroke-width="0.6" stroke-opacity="0.55" />
+            </pattern>
+            <pattern id="rail-ties" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
+              <line x1="0" y1="0" x2="0" y2="8" stroke="#1c1b18" stroke-width="2" />
+            </pattern>
+          </defs>
+
+          <!-- Cartographic Linen Paper Grid -->
+          <rect x="0" y="0" width="800" height="520" fill="#f4f1ea" />
+          <rect x="0" y="0" width="800" height="520" fill="url(#carto-grid)" />
+
+          <!-- Concentric Distance Rings centered on Shulin Station (390, 270) -->
+          <g id="distance-rings" fill="none" stroke="#c7bfb0" stroke-dasharray="4 4">
+            <circle cx="390" cy="270" r="105" stroke-width="1.1" />
+            <circle cx="390" cy="270" r="205" stroke-width="1.1" />
+            <circle cx="390" cy="270" r="320" stroke-width="1" />
+          </g>
+          <g font-family="Geist Mono, Noto Sans TC, monospace" font-size="10.5" fill="#5e5a51">
+            <text x="398" y="168">≈ 400m 步行 5 分鐘圈</text>
+            <text x="398" y="68">≈ 900m 步行 12 分鐘圈（秀泰／主幹道）</text>
+            <text x="530" y="34">外圍秘境・山區・交流道圈</text>
+          </g>
+
+          <!-- Zone Halos (Subtle geographic pockets) -->
+          <g id="zone-halos">
+            <!-- Zone 1: 前站博愛街夜市 -->
+            <ellipse cx="458" cy="222" rx="88" ry="52" fill="#9e3b2b" fill-opacity="0.08" stroke="#9e3b2b" stroke-opacity="0.35" stroke-dasharray="3 3" />
+            <text x="458" y="162" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9e3b2b">① 前站 &amp; 博愛街夜市圈</text>
+
+            <!-- Zone 2: 主幹道 保安/樹新/俊英 -->
+            <ellipse cx="598" cy="186" rx="112" ry="68" fill="#4a5d46" fill-opacity="0.08" stroke="#4a5d46" stroke-opacity="0.35" stroke-dasharray="3 3" />
+            <text x="612" y="110" text-anchor="middle" font-size="11.5" font-weight="700" fill="#4a5d46">② 保安・樹新・俊英主幹道</text>
+
+            <!-- Zone 4: 秀泰生活廣場 -->
+            <rect x="520" y="294" width="128" height="78" rx="4" fill="#3b596a" fill-opacity="0.1" stroke="#3b596a" stroke-opacity="0.45" />
+            <text x="584" y="286" text-anchor="middle" font-size="11.5" font-weight="700" fill="#3b596a">④ 樹林秀泰生活廣場</text>
+
+            <!-- Zone 3: 後站與巷弄老字號 -->
+            <ellipse cx="264" cy="274" rx="92" ry="64" fill="#8a6f48" fill-opacity="0.1" stroke="#8a6f48" stroke-opacity="0.4" stroke-dasharray="3 3" />
+            <text x="255" y="202" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8a6f48">③ 後站與巷弄老字號</text>
+
+            <!-- Zone 5: 老宅與山區秘境 -->
+            <ellipse cx="164" cy="404" rx="122" ry="74" fill="#1c1b18" fill-opacity="0.06" stroke="#1c1b18" stroke-opacity="0.3" stroke-dasharray="3 3" />
+            <text x="164" y="322" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1c1b18">⑤ 文青老宅・景觀秘境・庭園</text>
+          </g>
+
+          <!-- TRA Railway Axis (Northeast to Southwest through Shulin Station) -->
+          <g id="rail-corridor">
+            <line x1="120" y1="415" x2="670" y2="122" stroke="#1c1b18" stroke-width="5" stroke-opacity="0.22" />
+            <line x1="120" y1="415" x2="670" y2="122" stroke="#1c1b18" stroke-width="1.6" stroke-dasharray="10 6" />
+            <text x="155" y="384" transform="rotate(-28 155 384)" font-size="10.5" font-weight="600" fill="#5e5a51">台鐵縱貫線（往山佳／板橋方向）</text>
+          </g>
+
+          <!-- Central Anchor: TRA Shulin Station -->
+          <g id="station-anchor" transform="translate(390, 270)">
+            <rect x="-54" y="-16" width="108" height="32" rx="2" fill="#1c1b18" />
+            <text x="0" y="4" text-anchor="middle" font-size="12" font-weight="700" fill="#f4f1ea">台鐵 樹林火車站</text>
+            <text x="24" y="-22" font-size="10" font-weight="600" fill="#9e3b2b">▲ 前站出口</text>
+            <text x="-66" y="30" font-size="10" font-weight="600" fill="#8a6f48">▼ 後站出口</text>
+          </g>
+
+          <!-- Dynamic Pins Layer -->
+          <g id="map-pins-layer"></g>
+
+          <!-- Compass Rose & Scale Attribution -->
+          <g transform="translate(744, 468)" font-family="Geist Mono, sans-serif" font-size="10" fill="#5e5a51">
+            <circle cx="0" cy="0" r="18" fill="#f9f7f2" stroke="#1c1b18" stroke-width="1" />
+            <path d="M 0 -13 L 4 0 L 0 -3 L -4 0 Z" fill="#9e3b2b" />
+            <path d="M 0 13 L 4 0 L 0 3 L -4 0 Z" fill="#1c1b18" opacity="0.35" />
+            <text x="0" y="-22" text-anchor="middle" font-weight="700" fill="#1c1b18">N</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="map-legend">
+        <span class="legend-item"><span class="zone-dot" style="background: var(--data-2);"></span>① 前站博愛夜市</span>
+        <span class="legend-item"><span class="zone-dot" style="background: var(--data-1);"></span>② 主幹道經典小吃</span>
+        <span class="legend-item"><span class="zone-dot" style="background: var(--data-4);"></span>③ 後站巷弄老字號</span>
+        <span class="legend-item"><span class="zone-dot" style="background: var(--data-5);"></span>④ 樹林秀泰廣場</span>
+        <span class="legend-item"><span class="zone-dot" style="background: var(--data-3);"></span>⑤ 老宅與景觀秘境</span>
+      </div>
+    </div>
+
+    <!-- Right: Live Shop Spotlight Inspector -->
+    <aside class="inspector-panel" id="shop-inspector" aria-label="焦點店家實景詳情">
+      <div class="inspector-visual-wrap mode-map" id="inspector-visual-wrap">
+        <canvas id="inspector-canvas" class="scene-canvas" width="640" height="360"></canvas>
+        <iframe id="inspector-map" class="scene-map" title="焦點店家 Google 地圖" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <div class="scene-view-tabs" id="inspector-view-tabs"></div>
+        <span class="scene-badge" id="inspector-code">NO. 01</span>
+        <span class="scene-zone-chip" id="inspector-zone-chip">1. 樹林車站前站 &amp; 博愛街夜市商圈</span>
+      </div>
+
+      <div class="inspector-body">
+        <div class="inspector-title-row">
+          <h3 class="inspector-title" id="inspector-title">樹林大眾牛排</h3>
+          <button type="button" class="card-btn" id="inspector-fav-btn" onclick="toggleFavoriteSelected()">
+            <i data-lucide="heart" width="15" height="15"></i>
+            <span id="inspector-fav-label">收藏</span>
+          </button>
+        </div>
+
+        <div class="address-line">
+          <i data-lucide="map-pin" width="15" height="15"></i>
+          <span id="inspector-address">新北市樹林區博愛街52號</span>
+        </div>
+
+        <div class="highlight-box" id="inspector-highlight"></div>
+
+        <div>
+          <span class="card-dishes-label">MUST-ORDER · 必點招牌餐點</span>
+          <div class="dish-list" id="inspector-dishes"></div>
+        </div>
+
+        <div class="inspector-actions">
+          <div class="nav-pair">
+            <button type="button" class="card-btn" onclick="stepSelectedShop(-1)">
+              <i data-lucide="chevron-left" width="15" height="15"></i>
+              上一家
+            </button>
+            <button type="button" class="card-btn" onclick="stepSelectedShop(1)">
+              下一家
+              <i data-lucide="chevron-right" width="15" height="15"></i>
+            </button>
+          </div>
+          <button type="button" class="card-btn" onclick="scrollToCardSelected()">
+            <i data-lucide="arrow-down" width="15" height="15"></i>
+            跳至卡片清單
+          </button>
+        </div>
+        <div class="card-links" id="inspector-links"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 25 Shop Cards Grid -->
+  <section aria-label="樹林 25 家名店詳細實景卡片">
+    <div class="section-header">
+      <h2 class="section-title">實景門面與招牌餐點圖鑑</h2>
+      <span class="result-count" id="grid-result-count">共顯示 25 家名店</span>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      <h3 style="margin: 0; font-family: var(--font-headline);">目前篩選條件下沒有符合的店家</h3>
+      <p style="margin: 0; color: var(--on-surface-variant);">請嘗試切換不同區域分類、清除搜尋關鍵字，或取消「只看收藏」篩選。</p>
+      <div>
+        <button type="button" class="action-btn is-primary" onclick="resetAllFilters()">重設所有篩選條件</button>
+      </div>
+    </div>
+
+    <div class="card-grid" id="shop-cards-grid"></div>
+  </section>
+
+  <!-- Data & Itinerary Breakdown -->
+  <section class="insight-grid" aria-label="五大分區餐點屬性統計與推薦散步路線">
+    <div class="chart-card">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">五大區域美食屬性分佈</h2>
+          <p class="panel-subtitle">統計 25 家名店在「正餐／宵夜／銅板／咖啡甜點／親子聚餐」的涵蓋面向（部分店家橫跨多時段）</p>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="zone-breakdown-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">快速載入官方建議行程</h2>
+          <p class="panel-subtitle">一鍵將來源筆記中的經典動線加入「我的散步清單」</p>
+        </div>
+      </div>
+      <div class="route-cards">
+        <article class="route-item">
+          <h3>樹林車站半日美食巡禮（5 站經典）</h3>
+          <p class="route-stops">樹林黑肉圓 → 樹林紅麵線 → 炭厚囍 → LAIFA 來發咖啡所 → 極黑家阿義腿庫飯 / 大眾牛排 / 博愛街夜市</p>
+          <div>
+            <button type="button" class="card-btn" onclick="applyPresetRoute('halfday')">
+              <i data-lucide="route" width="15" height="15"></i>
+              套用半日巡禮至收藏
+            </button>
+          </div>
+        </article>
+        <article class="route-item">
+          <h3>樹林慢活一日遊（萌寵老宅 × 秀泰 × 宵夜）</h3>
+          <p class="route-stops">紅磚園邸老宅餐廳 → 樹林秀泰生活廣場（北村豆腐家 / 燒丼 / 時時香）→ 博愛街夜市 → 深夜三媽臭臭鍋</p>
+          <div>
+            <button type="button" class="card-btn" onclick="applyPresetRoute('fullday')">
+              <i data-lucide="sparkles" width="15" height="15"></i>
+              套用一日慢活至收藏
+            </button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sources Footer -->
+  <footer class="sources-footer">
+    <strong>資料來源與編纂說明：</strong>
+    本互動地圖內容完整整理自筆記來源資料：《樹林美食 5 大區域與主題分類》、《樹林慢活一日遊：影城購物、老宅萌寵與神級宵夜行程》、《樹林車站美食半日遊路線指南》、Trip Moments「2026 秀泰生活樹林店餐廳美食推薦」、Klook 客路部落格「樹林美食推薦」、KKday 部落格「樹林夜市美食精選」、WalkerLand 窩客島「樹林人秘密美食清單」、GOMAJI 夠麻吉、ETtoday 旅遊雲、巴哈姆特創作大廳（ShowCafe 食記）、新北市政府捷運工程局工頭誌及 Uber Eats 商家資訊。每張卡片預設直接嵌入 Google 地圖（可拖曳、縮放，並可從地圖拖曳小黃人進入街景查看真實店面）；亦可切換為手繪店面示意圖，或放入自己的實景照片。地圖需連上網路才會顯示。
+  </footer>
+</main>
+
+<api-shim></api-shim>
+<div class="photo-modal" id="photo-modal" role="dialog" aria-modal="true" aria-labelledby="photo-modal-title">
+  <div class="photo-dialog">
+    <h3 id="photo-modal-title">店面照片</h3>
+    <p id="photo-modal-sub">貼上圖片網址或上傳照片；未設定時顯示手繪店面示意圖。照片只儲存在您這台裝置的瀏覽器中。</p>
+    <div class="photo-preview"><canvas id="photo-preview-canvas" width="640" height="360"></canvas></div>
+    <div>
+      <label for="photo-url-input">圖片網址（https://…）</label>
+      <input type="url" id="photo-url-input" placeholder="https://example.com/storefront.jpg" autocomplete="off">
+    </div>
+    <div class="photo-row">
+      <button type="button" class="card-btn" onclick="applyPhotoUrl()"><i data-lucide="link" width="15" height="15"></i>套用網址</button>
+      <button type="button" class="card-btn" onclick="document.getElementById('photo-file-input').click()"><i data-lucide="upload" width="15" height="15"></i>上傳照片</button>
+      <input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="onPhotoFile(this)">
+    </div>
+    <div class="photo-row">
+      <button type="button" class="card-btn" onclick="removeShopPhoto()"><i data-lucide="trash-2" width="15" height="15"></i>移除照片</button>
+      <button type="button" class="card-btn" onclick="closePhotoModal()"><i data-lucide="check" width="15" height="15"></i>完成</button>
+    </div>
+    <p id="photo-modal-msg" role="status"></p>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// 1. DATASET: 25 Grounded Shulin Culinary Stops across 5 Zones
+// =========================================================================
+const ZONES = {
+  1: { name: `1. 樹林車站前站 & 博愛街夜市商圈`, short: `前站 & 博愛夜市`, color: `#9e3b2b` },
+  2: { name: `2. 車站周邊與主幹道經典小吃`, short: `主幹道經典小吃`, color: `#4a5d46` },
+  3: { name: `3. 樹林火車站後站與巷弄老字號`, short: `後站與巷弄老店`, color: `#8a6f48` },
+  4: { name: `4. 樹林秀泰生活廣場`, short: `樹林秀泰廣場`, color: `#3b596a` },
+  5: { name: `5. 樹林文青老宅、景觀秘境與特色庭園`, short: `老宅與景觀秘境`, color: `#1c1b18` }
+};
+
+const SHOPS = [
+  // --- ZONE 1 ---
+  {
+    id: 1, code: `01`, zone: 1,
+    name: `樹林大眾牛排`,
+    address: `新北市樹林區博愛街52號`,
+    highlight: `在地經營超過 30 年（已歷 38 年由第二代傳承）的超人氣牛排館。下午 5 點開店前門口常現排隊人潮，內用需先領取號碼牌；提供抹醬吐司、玉米濃湯、多款飲料及冰淇淋無限享用，且加麵不加價。`,
+    dishes: [`炙燒起司系列排餐（爆漿起司瀑布）`, `黑胡椒／蒜香羅勒排餐`, `無限享用抹醬吐司與玉米濃湯`],
+    tags: [`夜市／宵夜`, `正餐／便當`, `親子／聚餐`],
+    mapX: 432, mapY: 224,
+    scene: { arch: `nightmarket_shop`, signText: `樹林大眾牛排`, signBg: `#b2291c`, signFg: `#fff7e6`, awning: `#c93829`, dish: `steak_cheese`, accent: `#e2a832` }
+  },
+  {
+    id: 2, code: `02`, zone: 1,
+    name: `鐘及美味斗六當歸鴨`,
+    address: `新北市樹林區博愛街143號`,
+    highlight: `網路評價高達 4.4 分的夜市排隊名店。當歸湯頭以珍貴中藥材熬製，喝起來溫順甘醇且內用可免費續湯，是夜市暖胃代表。`,
+    dishes: [`招牌鴨腿飯（整隻去骨切片鴨腿蓋滿白飯）`, `中藥材甘醇當歸鴨湯（免費續湯）`],
+    tags: [`夜市／宵夜`, `正餐／便當`],
+    mapX: 486, mapY: 205,
+    scene: { arch: `nightmarket_shop`, signText: `斗六當歸鴨`, signBg: `#8c1d18`, signFg: `#f9dfa0`, awning: `#2c4438`, dish: `duck_rice`, accent: `#a6632b` }
+  },
+  {
+    id: 3, code: `03`, zone: 1,
+    name: `鑫家鄉黑石頭烤玉米`,
+    address: `新北市樹林區博愛街夜市內`,
+    highlight: `堅持現點現烤，建議先預約或點餐後先逛夜市再回來取餐。嚴選 Q 彈糯玉米，刷上特製醬油膏、豬油與中藥粉調配的獨門醬汁，鹹香入味。`,
+    dishes: [`黑石頭炭烤糯玉米（特製中藥豬油醬汁）`],
+    tags: [`夜市／宵夜`, `銅板小吃`],
+    mapX: 458, mapY: 245,
+    scene: { arch: `nightmarket_stall`, signText: `鑫家鄉黑石頭烤玉米`, signBg: `#231d19`, signFg: `#f4b844`, awning: `#8a2f22`, dish: `grilled_corn`, accent: `#d47824` }
+  },
+  {
+    id: 4, code: `04`, zone: 1,
+    name: `醇醇滷味`,
+    address: `新北市樹林區博愛街121號門口（鄰近博愛街135號）`,
+    highlight: `深夜限定超人氣排隊滷味（約凌晨 02:00～05:30 營業），「爆肝也要排隊買」的樹林深夜傳奇。滷汁鹹中帶甘甜，蘊含清香中藥味與淡淡麻油香。`,
+    dishes: [`限量雞皮（每人限購3份）`, `甜不辣`, `杏鮑菇`, `百頁豆腐`, `雞爪／雞翅`],
+    tags: [`夜市／宵夜`, `銅板小吃`],
+    mapX: 472, mapY: 230,
+    scene: { arch: `nightmarket_stall`, signText: `醇醇滷味 深夜限定`, signBg: `#f4f1ea`, signFg: `#b2291c`, awning: `#1c1b18`, dish: `luwei`, accent: `#9e5a2b` }
+  },
+  {
+    id: 5, code: `05`, zone: 1,
+    name: `萬記臭豆腐 / 老牌黑輪`,
+    address: `新北市樹林區博愛街151 / 155號`,
+    highlight: `兩家老字號攤位共用熱鬧用餐空間，一次品嚐酥炸與關東煮雙重經典。萬記臭豆腐金黃香酥，肉圓皮 Q 飽滿，隔壁老牌黑輪湯頭清甜。`,
+    dishes: [`萬記金黃臭豆腐（搭泡菜與特製辣醬）`, `皮Q飽滿肉圓`, `老牌黑輪高麗菜捲`],
+    tags: [`夜市／宵夜`, `銅板小吃`],
+    mapX: 505, mapY: 222,
+    scene: { arch: `twin_stall`, signText: `萬記臭豆腐｜老牌黑輪`, signBg: `#d67d22`, signFg: `#1c1b18`, awning: `#3d5446`, dish: `stinky_tofu`, accent: `#d9a436` }
+  },
+
+  // --- ZONE 2 ---
+  {
+    id: 6, code: `06`, zone: 2,
+    name: `樹林紅麵線`,
+    address: `新北市樹林區保安街一段22之5號（距車站約400公尺）`,
+    highlight: `週二至六 15:00–23:00 營業（週日、一公休），是在地老店也是藝人林心如的口袋愛店。大骨高湯搭手工紅麵線口感紮實不軟爛，大腸處理極乾淨軟 Q 無腥味。`,
+    dishes: [`手工大腸紅麵線（可單點大腸・推薦加辣）`, `獨門醬汁甜不辣`],
+    tags: [`銅板小吃`, `夜市／宵夜`],
+    mapX: 554, mapY: 168,
+    scene: { arch: `street_tile`, signText: `樹林紅麵線・甜不辣`, signBg: `#9e2a22`, signFg: `#fff7e6`, awning: `#9e2a22`, dish: `red_vermicelli`, accent: `#b84a24` }
+  },
+  {
+    id: 7, code: `07`, zone: 2,
+    name: `極黑家 阿義腿庫飯`,
+    address: `新北市樹林區俊英街106-1號（樹新路／俊英街口）`,
+    highlight: `樹林人氣便當扛壩子，常未開門即現排隊人潮。腿庫肉質扎實且滷得入口即化，肥瘦參半配上濕潤筍乾相當下飯，選擇障礙者必點「大綜合飯」。`,
+    dishes: [`招牌腿庫飯`, `大綜合飯（排骨＋紅燒肉＋香腸）`],
+    tags: [`正餐／便當`],
+    mapX: 668, mapY: 162,
+    scene: { arch: `modern_street`, signText: `極黑家 阿義腿庫飯`, signBg: `#1c1b18`, signFg: `#e5b94c`, awning: `#2c2823`, dish: `leg_rice`, accent: `#964b22` }
+  },
+  {
+    id: 8, code: `08`, zone: 2,
+    name: `保安街無名麵店`,
+    address: `新北市樹林區保安街一段136號旁`,
+    highlight: `超高 CP 值的隱藏銅板小吃，陪伴在地人吃飽吃滿的日常老攤。一顆滷蛋僅需 10 元，早午晚餐皆能花少少預算獲得十足飽足感。`,
+    dishes: [`蒜泥肉燥炒麵（必加甜辣醬）`, `10元滷蛋`, `四神湯／貢丸湯`],
+    tags: [`銅板小吃`, `正餐／便當`],
+    mapX: 598, mapY: 142,
+    scene: { arch: `alley_cart`, signText: `保安街無名麵店`, signBg: `#ebe6db`, signFg: `#1c1b18`, awning: `#5d6d64`, dish: `street_noodles`, accent: `#c95d2b` }
+  },
+  {
+    id: 9, code: `09`, zone: 2,
+    name: `炭厚囍`,
+    address: `新北市樹林區樹新路140號`,
+    highlight: `主幹道炭烤早午餐專賣，堅持所有食材皆以真炭火烘烤。招牌大腸包小腸融入酸菜與香脆蒜餅（口感如可樂果般酥脆），打造層次豐富的懷舊台味。`,
+    dishes: [`碳烤咔滋大腸包小腸（酸菜＋香脆蒜餅）`],
+    tags: [`銅板小吃`, `正餐／便當`],
+    mapX: 638, mapY: 215,
+    scene: { arch: `wood_corner`, signText: `炭厚囍・真炭火`, signBg: `#3a2d24`, signFg: `#f4e3c1`, awning: `#8a6f48`, dish: `charcoal_sausage`, accent: `#c84b28` }
+  },
+  {
+    id: 10, code: `10`, zone: 2,
+    name: `三媽臭臭鍋（樹林樹新／中山店）`,
+    address: `新北市樹林區樹新路38號（近濟安宮）／中山路一段176號`,
+    highlight: `樹新店營業至凌晨 12:00，被網友封為三媽界「傳奇 Top 0」神級分店；中山店在 Uber Eats 亦獲 4.7 星（700+ 評價）。湯頭格外濃郁，風味完全融入高湯中。`,
+    dishes: [`大腸臭臭鍋（$215）`, `元寶南瓜鍋（$230）`, `沙茶牛肉鍋（$225）`, `滷鴨血（$50）`],
+    tags: [`正餐／便當`, `夜市／宵夜`],
+    mapX: 540, mapY: 224,
+    scene: { arch: `street_tile`, signText: `三媽臭臭鍋 樹林店`, signBg: `#b8291d`, signFg: `#ffe869`, awning: `#b8291d`, dish: `stinky_pot`, accent: `#d64927` }
+  },
+
+  // --- ZONE 3 ---
+  {
+    id: 11, code: `11`, zone: 3,
+    name: `樹林黑肉圓`,
+    address: `新北市樹林區後站街3巷91-3號`,
+    highlight: `出後站即達、在地經營逾 20 年老字號。採清蒸方式製作，內餡包裹飽滿黑豬絞肉、竹筍與紅蘿蔔絲，外皮軟 Q 不油膩。`,
+    dishes: [`清蒸黑肉圓`, `韭菜豬血湯（大骨與蝦米熬製）`],
+    tags: [`銅板小吃`, `正餐／便當`],
+    mapX: 298, mapY: 266,
+    scene: { arch: `alley_steamer`, signText: `樹林黑肉圓`, signBg: `#fff7e6`, signFg: `#9e2a22`, awning: `#4a5d46`, dish: `steamed_rouyuan`, accent: `#8f4a2b` }
+  },
+  {
+    id: 12, code: `12`, zone: 3,
+    name: `三分鐘熱度`,
+    address: `新北市樹林區車站後站周邊`,
+    highlight: `後站深受推崇的手作烘焙名店，主打現烤出爐的層次酥皮甜點，奶香濃郁不膩口，是通勤族與甜點控的後站口袋名單。`,
+    dishes: [`千層蛋撻（外皮層次分明）`, `卡士達泡芙`, `明太子麵包`],
+    tags: [`咖啡／甜點`, `銅板小吃`],
+    mapX: 262, mapY: 298,
+    scene: { arch: `bakery_window`, signText: `三分鐘熱度 手作烘焙`, signBg: `#4c3828`, signFg: `#f9ebd2`, awning: `#c29b61`, dish: `egg_tart`, accent: `#d9922b` }
+  },
+  {
+    id: 13, code: `13`, zone: 3,
+    name: `杦窩 Jiuwo_studio`,
+    address: `新北市樹林區車站後站廣場周邊`,
+    highlight: `後站質感水池造景咖啡廳，店內水池設計取得韓國授權（@bradys___），空間寬敞極好拍照，還有可愛店狗相伴！`,
+    dishes: [`椒麻奶油鮮蝦義大利麵（$280）`, `奶油松露蛤蜊義大利麵（$270）`, `焦糖布丁（$110）`, `椪柑伯爵戚風（$160）`],
+    tags: [`咖啡／甜點`, `正餐／便當`],
+    mapX: 320, mapY: 312,
+    scene: { arch: `pool_cafe`, signText: `杦窩 Jiuwo_studio`, signBg: `#ebe6db`, signFg: `#1c1b18`, awning: `#4a5d46`, dish: `pool_pasta`, accent: `#c96b3b` }
+  },
+  {
+    id: 14, code: `14`, zone: 3,
+    name: `翔皓雞排`,
+    address: `新北市樹林區鎮前街（車站周邊）`,
+    highlight: `樹林車站附近排隊炸物名店，雞排醃料帶有淡淡中藥香氣並撒上特製胡椒粉，現炸出鍋香氣四溢，肉質鮮嫩多汁。`,
+    dishes: [`中藥香特製雞排`, `鮮嫩雞柳條`, `現炸雞翅`],
+    tags: [`銅板小吃`, `夜市／宵夜`],
+    mapX: 332, mapY: 228,
+    scene: { arch: `nightmarket_stall`, signText: `翔皓雞排`, signBg: `#e5b94c`, signFg: `#1c1b18`, awning: `#9e2a22`, dish: `fried_chicken`, accent: `#d4822a` }
+  },
+  {
+    id: 15, code: `15`, zone: 3,
+    name: `九分雞蛋糕`,
+    address: `新北市樹林區博愛街140號`,
+    highlight: `復古攤車造型的人氣排隊甜點，糕體綿密扎實，邊角刻意烤出如餅乾般的酥脆焦邊，包餡口味流沙爆漿。`,
+    dishes: [`蛋黃流沙奶酥雞蛋糕`, `黑糖麻糬雞蛋糕`, `經典原味雞蛋糕`],
+    tags: [`銅板小吃`, `咖啡／甜點`],
+    mapX: 215, mapY: 256,
+    scene: { arch: `retro_cart`, signText: `九分雞蛋糕`, signBg: `#f4e7cf`, signFg: `#5a3821`, awning: `#8a6f48`, dish: `egg_cake`, accent: `#d69b38` }
+  },
+
+  // --- ZONE 4 ---
+  {
+    id: 16, code: `16`, zone: 4,
+    name: `燒丼株式會社`,
+    address: `新北市樹林區樹新路40-6號 7 樓（秀泰生活樹林店）`,
+    highlight: `秀泰 7 樓美食區超人氣燒肉丼飯專賣店。以獨門研發的野郎醬與黑豆醬醪醬炙燒肉片，肉質軟嫩、鹹甜醬香超級下飯。`,
+    dishes: [`野郎燒豬丼`, `醬醪雞腿丼`],
+    tags: [`正餐／便當`, `親子／聚餐`],
+    mapX: 548, mapY: 318,
+    scene: { arch: `mall_japanese`, signText: `燒丼株式會社`, signBg: `#1c1b18`, signFg: `#f4f1ea`, awning: `#9e2a22`, dish: `donburi`, accent: `#c45127` }
+  },
+  {
+    id: 17, code: `17`, zone: 4,
+    name: `北村豆腐家`,
+    address: `新北市樹林區樹新路40-6號 7 樓（秀泰生活樹林店）`,
+    highlight: `自秀泰試營運起便大排長龍的韓式豆腐鍋名店，豆腐滑嫩、湯頭濃郁下飯，內用更提供多款韓式涼拌小菜無限吃到飽。`,
+    dishes: [`韓式嫩豆腐煲`, `無限續盤韓式涼拌小菜`],
+    tags: [`正餐／便當`, `親子／聚餐`],
+    mapX: 585, mapY: 325,
+    scene: { arch: `mall_korean`, signText: `北村豆腐家`, signBg: `#2e2621`, signFg: `#e5c88c`, awning: `#5e4a38`, dish: `tofu_stew`, accent: `#c93829` }
+  },
+  {
+    id: 18, code: `18`, zone: 4,
+    name: `童鍋 親子火鍋`,
+    address: `新北市樹林區樹新路40-6號 6 樓（秀泰生活樹林店）`,
+    highlight: `北歐風質感的親子火鍋店！主打自然無負擔蔬菜湯底，店內貼心設有球池與溜滑梯遊戲區，並提供可愛車車餐具盛裝兒童餐。`,
+    dishes: [`自然蔬菜湯底鍋物`, `車車餐具兒童套餐`],
+    tags: [`親子／聚餐`, `正餐／便當`],
+    mapX: 622, mapY: 318,
+    scene: { arch: `mall_kids`, signText: `童鍋 親子火鍋`, signBg: `#dfe5dc`, signFg: `#2c4438`, awning: `#6b8a78`, dish: `kids_pot`, accent: `#4a5d46` }
+  },
+  {
+    id: 19, code: `19`, zone: 4,
+    name: `築間幸福鍋物`,
+    address: `新北市樹林區樹新路40-6號 7 樓（秀泰生活樹林店）`,
+    highlight: `自助吧蔬菜、蛋餃/芋頭/玉米鍋料、麵食與雞蛋選擇極豐富，附明治 8 種冰淇淋與霜淇淋，停車折抵方便，用餐限時 100 分鐘。`,
+    dishes: [`胡椒豬骨湯／桌邊爆炒石頭湯`, `板腱牛／梅花豬`, `醬料區麻辣牛B醬`],
+    tags: [`正餐／便當`, `親子／聚餐`, `夜市／宵夜`],
+    mapX: 560, mapY: 352,
+    scene: { arch: `mall_hotpot`, signText: `築間幸福鍋物`, signBg: `#f4f1ea`, signFg: `#1c1b18`, awning: `#2c2823`, dish: `stone_pot`, accent: `#8a6f48` }
+  },
+  {
+    id: 20, code: `20`, zone: 4,
+    name: `時時香 RICE BAR`,
+    address: `新北市樹林區樹新路40-6號 7 樓（秀泰生活樹林店）`,
+    highlight: `跨菜系中菜聚餐首選！門口以醒目天燈造景與台灣米品種展示為特色，氛圍大器喜氣，適合親友聚餐共享。`,
+    dishes: [`金銀饅頭（金黃酥脆搭煉乳）`, `多款台灣米配跨菜系中菜`],
+    tags: [`親子／聚餐`, `正餐／便當`],
+    mapX: 612, mapY: 352,
+    scene: { arch: `mall_lantern`, signText: `時時香 RICE BAR`, signBg: `#9e2a22`, signFg: `#f4d88c`, awning: `#4c1f1a`, dish: `mantou`, accent: `#d9922b` }
+  },
+
+  // --- ZONE 5 ---
+  {
+    id: 21, code: `21`, zone: 5,
+    name: `紅磚園邸老宅餐廳`,
+    address: `新北市樹林區太平路247巷9號`,
+    highlight: `紅磚古宅改造的輕工業風老宅餐廳，最大亮點是戶外庭院養有超可愛的水豚君與狐獴，可近距離互動餵食，是樹林慢活首選。`,
+    dishes: [`義式烤雞腿排伐木工人蕃茄飯`, `小惡魔骰子牛蒜味辣椒麵`, `卡皮巴拉特調飲品`],
+    tags: [`親子／聚餐`, `正餐／便當`, `咖啡／甜點`],
+    mapX: 218, mapY: 378,
+    scene: { arch: `redbrick_capybara`, signText: `紅磚園邸`, signBg: `#3a2d24`, signFg: `#f4e7cf`, awning: `#8c3b2b`, dish: `capybara_meal`, accent: `#b84a24` }
+  },
+  {
+    id: 22, code: `22`, zone: 5,
+    name: `LAIFA Coffee Store 來發咖啡所`,
+    address: `新北市樹林區啟智街111號`,
+    highlight: `樹林極具質感的巷弄文青咖啡廳，外牆純白網美牆極好拍照，連藝人彭于晏也曾專程到訪打卡。`,
+    dishes: [`招牌提拉米蘇（濃厚咖啡與淡淡酒香）`, `單品手沖咖啡`],
+    tags: [`咖啡／甜點`],
+    mapX: 268, mapY: 398,
+    scene: { arch: `white_minimal`, signText: `LAIFA 來發咖啡所`, signBg: `#ffffff`, signFg: `#1c1b18`, awning: `#d2cbbd`, dish: `tiramisu`, accent: `#6f4e37` }
+  },
+  {
+    id: 23, code: `23`, zone: 5,
+    name: `微間素生 MI-KAN STUDIO`,
+    address: `新北市樹林區篤行路三段巷弄`,
+    highlight: `保留紅磚、矮牆與水泥原始質感的復古老宅咖啡廳，將歲月痕跡揉入甜點飲品之中，驚喜感十足。`,
+    dishes: [`隱藏版「酒釀櫻桃氣泡飲」（配香草冰淇淋與草莓糖葫蘆）`],
+    tags: [`咖啡／甜點`],
+    mapX: 160, mapY: 424,
+    scene: { arch: `old_brick_cafe`, signText: `微間素生 MI-KAN`, signBg: `#5c4d42`, signFg: `#f4f1ea`, awning: `#7a3b2e`, dish: `cherry_soda`, accent: `#b82929` }
+  },
+  {
+    id: 24, code: `24`, zone: 5,
+    name: `TREE TOP KAFFA 樹頂上`,
+    address: `新北市樹林區德和街17巷15號`,
+    highlight: `隱身於樹林山區的秘境景觀咖啡廳，視野遼闊毫無遮蔽，傍晚至夜間能同時欣賞夕陽餘暉與浪漫萬家燈火夜景。`,
+    dishes: [`景觀手沖／特調咖啡`, `夕陽午茶甜點`],
+    tags: [`咖啡／甜點`, `親子／聚餐`],
+    mapX: 84, mapY: 368,
+    scene: { arch: `hilltop_deck`, signText: `TREE TOP 樹頂上`, signBg: `#2e2621`, signFg: `#f4d88c`, awning: `#4a5d46`, dish: `hilltop_coffee`, accent: `#d9822b` }
+  },
+  {
+    id: 25, code: `25`, zone: 5,
+    name: `五葉松庭園餐廳`,
+    address: `新北市樹林區佳園路三段（近樹林交流道／北大社區）`,
+    highlight: `擁有寬廣庭園造景的中式合菜餐廳，深受慶生、尾牙與家族聚餐青睞，提供道地台菜與川菜合菜，並附有古早味免費雞油飯。`,
+    dishes: [`台菜／川菜海鮮合菜`, `古早味免費雞油飯`],
+    tags: [`親子／聚餐`, `正餐／便當`],
+    mapX: 145, mapY: 468,
+    scene: { arch: `pine_garden`, signText: `五葉松庭園餐廳`, signBg: `#3a2d24`, signFg: `#e5c88c`, awning: `#2c4438`, dish: `pine_banquet`, accent: `#4a5d46` }
+  }
+];
+
+// =========================================================================
+// 2. APPLICATION STATE (Synced with notebookAppApi)
+// =========================================================================
+let appState = {
+  activeZone: `all`,
+  activeTag: `all`,
+  searchQuery: ``,
+  onlyFavorites: false,
+  selectedId: 1,
+  favorites: []
+};
+
+let breakdownChartInstance = null;
+
+// =========================================================================
+// 3. REAL-SCENE ARCHITECTURAL & CULINARY CANVAS RENDERER
+// =========================================================================
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawBrickWall(ctx, x, y, w, h, baseColor, mortarColor) {
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = mortarColor;
+  ctx.lineWidth = 1;
+  const bh = 12;
+  const bw = 26;
+  for (let row = 0; row * bh < h; row++) {
+    const yy = y + row * bh;
+    ctx.beginPath();
+    ctx.moveTo(x, yy);
+    ctx.lineTo(x + w, yy);
+    ctx.stroke();
+    const offset = (row % 2) * (bw / 2);
+    for (let col = -offset; col < w; col += bw) {
+      ctx.beginPath();
+      ctx.moveTo(x + col, yy);
+      ctx.lineTo(x + col, Math.min(yy + bh, y + h));
+      ctx.stroke();
+    }
+  }
+}
+
+function drawSteam(ctx, cx, cy, count, color) {
+  ctx.save();
+  ctx.strokeStyle = color || `rgba(255, 250, 240, 0.55)`;
+  ctx.lineWidth = 2;
+  ctx.lineCap = `round`;
+  for (let i = 0; i < count; i++) {
+    const ox = cx + (i - (count - 1) / 2) * 14;
+    ctx.beginPath();
+    ctx.moveTo(ox, cy);
+    ctx.bezierCurveTo(ox - 7, cy - 14, ox + 7, cy - 28, ox - 2, cy - 44);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawLantern(ctx, x, y, r, color) {
+  ctx.save();
+  ctx.strokeStyle = `#2a221c`;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r - 8);
+  ctx.lineTo(x, y - r);
+  ctx.stroke();
+
+  const g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, 2, x, y, r * 1.3);
+  g.addColorStop(0, `#ffe59e`);
+  g.addColorStop(0.55, color || `#c93829`);
+  g.addColorStop(1, `#6e1912`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(x, y, r * 0.85, r, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = `#1c1b18`;
+  ctx.fillRect(x - r * 0.38, y - r - 2, r * 0.76, 3);
+  ctx.fillRect(x - r * 0.32, y + r - 1, r * 0.64, 3);
+  ctx.restore();
+}
+
+function drawSignboard(ctx, x, y, w, h, text, bg, fg, style) {
+  ctx.save();
+  // Drop shadow for physical signboard depth
+  ctx.fillStyle = `rgba(20, 18, 15, 0.35)`;
+  roundRectPath(ctx, x + 3, y + 4, w, h, 3);
+  ctx.fill();
+
+  // Sign body
+  ctx.fillStyle = bg;
+  roundRectPath(ctx, x, y, w, h, 3);
+  ctx.fill();
+
+  // Sign rim
+  ctx.strokeStyle = style === `minimal` ? `#d2cbbd` : `rgba(255,255,255,0.28)`;
+  ctx.lineWidth = 1.5;
+  roundRectPath(ctx, x, y, w, h, 3);
+  ctx.stroke();
+
+  // Subtle top highlight for lightbox sheen
+  const sheen = ctx.createLinearGradient(x, y, x, y + h);
+  sheen.addColorStop(0, `rgba(255, 255, 255, 0.22)`);
+  sheen.addColorStop(0.5, `rgba(255, 255, 255, 0)`);
+  sheen.addColorStop(1, `rgba(0, 0, 0, 0.14)`);
+  ctx.fillStyle = sheen;
+  roundRectPath(ctx, x, y, w, h, 3);
+  ctx.fill();
+
+  // Sign text
+  ctx.fillStyle = fg;
+  ctx.textAlign = `center`;
+  ctx.textBaseline = `middle`;
+  const fontSize = text.length > 9 ? 15 : text.length > 6 ? 17 : 19;
+  ctx.font = `700 ${fontSize}px "Noto Serif TC", "Noto Sans TC", sans-serif`;
+  ctx.fillText(text, x + w / 2, y + h / 2 + 1, w - 16);
+  ctx.restore();
+}
+
+function drawAwning(ctx, x, y, w, h, color1, color2) {
+  ctx.save();
+  const stripes = 10;
+  const sw = w / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0 ? color1 : (color2 || `#f4f1ea`);
+    ctx.beginPath();
+    ctx.moveTo(x + i * sw, y);
+    ctx.lineTo(x + (i + 1) * sw, y);
+    ctx.lineTo(x + (i + 1) * sw + 4, y + h);
+    ctx.lineTo(x + i * sw - 2, y + h);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Bottom scallop shadow
+  ctx.fillStyle = `rgba(20, 18, 15, 0.28)`;
+  ctx.fillRect(x - 2, y + h, w + 6, 6);
+  ctx.restore();
+}
+
+function drawArchitectureBackground(ctx, W, H, shop) {
+  const s = shop.scene;
+  // 1. Sky / Ambient Environment
+  if (s.arch.startsWith(`nightmarket`) || s.arch === `twin_stall`) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, `#1d222c`);
+    sky.addColorStop(0.5, `#2f2926`);
+    sky.addColorStop(1, `#45372d`);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // Distant warm bokeh lights
+    [[60, 48, 22], [115, 36, 16], [560, 52, 24], [600, 38, 14]].forEach(([bx, by, br]) => {
+      const bg = ctx.createRadialGradient(bx, by, 1, bx, by, br);
+      bg.addColorStop(0, `rgba(255, 214, 125, 0.45)`);
+      bg.addColorStop(1, `rgba(255, 214, 125, 0)`);
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Building facade left-center
+    drawBrickWall(ctx, 26, 64, 345, 232, `#d9cfc1`, `rgba(110, 96, 80, 0.25)`);
+    // Warm shop interior window
+    const winGlow = ctx.createLinearGradient(54, 146, 54, 265);
+    winGlow.addColorStop(0, `#ffe3a8`);
+    winGlow.addColorStop(1, `#d49a52`);
+    ctx.fillStyle = winGlow;
+    ctx.fillRect(54, 146, 265, 118);
+
+    // Interior counter & silhouettes
+    ctx.fillStyle = `#6e4e37`;
+    ctx.fillRect(54, 224, 265, 40);
+    ctx.fillStyle = `#c2c6c9`;
+    ctx.fillRect(66, 204, 140, 22);
+    ctx.fillStyle = `rgba(255,255,255,0.22)`;
+    ctx.fillRect(62, 152, 55, 68);
+
+    // Awning & Lanterns
+    drawAwning(ctx, 20, 112, 355, 34, s.awning, `#f4f1ea`);
+    drawSignboard(ctx, 36, 48, 286, 48, s.signText, s.signBg, s.signFg, `lightbox`);
+    drawLantern(ctx, 342, 134, 14, `#c93829`);
+    drawLantern(ctx, 368, 134, 14, `#d97c24`);
+
+    if (s.arch === `nightmarket_stall`) {
+      // Exposed glowing bulbs under stall roof
+      for (let bx = 46; bx <= 300; bx += 52) {
+        const bulb = ctx.createRadialGradient(bx, 152, 1, bx, 152, 20);
+        bulb.addColorStop(0, `#fff8d6`);
+        bulb.addColorStop(1, `rgba(255, 220, 130, 0)`);
+        ctx.fillStyle = bulb;
+        ctx.beginPath();
+        ctx.arc(bx, 152, 20, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else if (s.arch === `street_tile` || s.arch === `modern_street` || s.arch === `alley_cart` || s.arch === `wood_corner` || s.arch === `alley_steamer` || s.arch === `retro_cart` || s.arch === `bakery_window` || s.arch === `pool_cafe`) {
+    // Daytime/Dusk Taiwanese Street & Arcade Architecture
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, s.arch === `pool_cafe` ? `#d9e2e6` : `#cfd8dc`);
+    sky.addColorStop(0.65, `#e6ded1`);
+    sky.addColorStop(1, `#bfb3a2`);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // Arcade building column & mosaic tile wall
+    const wallColor = s.arch === `modern_street` ? `#2d2a26` : s.arch === `wood_corner` ? `#dcd3c4` : s.arch === `pool_cafe` ? `#ebe7df` : `#d7d0c3`;
+    ctx.fillStyle = wallColor;
+    ctx.fillRect(22, 34, 360, 268);
+
+    // Tile lines
+    ctx.strokeStyle = `rgba(28, 27, 24, 0.1)`;
+    ctx.lineWidth = 1;
+    for (let ty = 48; ty < 280; ty += 18) {
+      ctx.beginPath(); ctx.moveTo(22, ty); ctx.lineTo(382, ty); ctx.stroke();
+    }
+
+    // Shop interior glass/open front
+    const interior = ctx.createLinearGradient(44, 132, 44, 272);
+    interior.addColorStop(0, s.arch === `pool_cafe` ? `#e4ecee` : `#f7dfb0`);
+    interior.addColorStop(1, s.arch === `pool_cafe` ? `#b8ccd2` : `#cfa368`);
+    ctx.fillStyle = interior;
+    ctx.fillRect(44, 132, 300, 142);
+
+    if (s.arch === `pool_cafe`) {
+      // Korean-licensed shallow reflecting pool & stepping stones & cute dog silhouette
+      ctx.fillStyle = `#8fb2bd`;
+      ctx.fillRect(44, 224, 300, 50);
+      ctx.fillStyle = `#e8e3d9`;
+      ctx.fillRect(80, 242, 44, 12);
+      ctx.fillRect(148, 242, 44, 12);
+      // Shop dog silhouette by pool edge
+      ctx.fillStyle = `#8a5d3b`;
+      ctx.beginPath(); ctx.ellipse(258, 220, 16, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(272, 210, 8, 0, Math.PI * 2); ctx.fill();
+    } else if (s.arch === `alley_steamer`) {
+      // Stacked bamboo/metal steamers billowing white steam
+      for (let st = 0; st < 4; st++) {
+        ctx.fillStyle = `#c8b38d`;
+        ctx.fillRect(72, 222 - st * 15, 58, 12);
+        ctx.strokeStyle = `#6e5a3e`;
+        ctx.strokeRect(72, 222 - st * 15, 58, 12);
+      }
+      drawSteam(ctx, 101, 158, 3);
+    } else if (s.arch === `retro_cart` || s.arch === `alley_cart`) {
+      // Wooden pushcart / noodle stall counter
+      ctx.fillStyle = `#7a5234`;
+      ctx.fillRect(58, 186, 195, 84);
+      ctx.strokeStyle = `#452b18`;
+      ctx.strokeRect(58, 186, 195, 84);
+      ctx.fillStyle = `#b8c2c7`;
+      ctx.fillRect(74, 168, 70, 18);
+      drawSteam(ctx, 108, 160, 2);
+    } else if (s.arch === `bakery_window`) {
+      // Bakery golden pastry trays in warm display window
+      ctx.fillStyle = `#593e2b`;
+      ctx.fillRect(58, 184, 240, 80);
+      for (let px = 76; px < 268; px += 34) {
+        ctx.fillStyle = `#e09b3d`;
+        ctx.beginPath(); ctx.ellipse(px, 210, 11, 7, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(px, 238, 11, 7, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    } else {
+      // Stainless steel prep station & warm counter
+      ctx.fillStyle = `#b8bec2`;
+      ctx.fillRect(56, 202, 225, 68);
+      ctx.fillStyle = `rgba(255,255,255,0.4)`;
+      ctx.fillRect(56, 168, 225, 34);
+    }
+
+    drawAwning(ctx, 20, 102, 360, 28, s.awning, `#f4f1ea`);
+    drawSignboard(ctx, 40, 44, 290, 46, s.signText, s.signBg, s.signFg, `street`);
+  } else if (s.arch.startsWith(`mall_`)) {
+    // Showtime Plaza Indoor Mall Architecture
+    const mallBg = ctx.createLinearGradient(0, 0, 0, H);
+    mallBg.addColorStop(0, `#dcd6cb`);
+    mallBg.addColorStop(0.7, `#ebe6db`);
+    mallBg.addColorStop(1, `#c7bfb0`);
+    ctx.fillStyle = mallBg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Mall ceiling recessed warm spotlights
+    for (let lx = 80; lx < 360; lx += 85) {
+      const spot = ctx.createRadialGradient(lx, 24, 2, lx, 24, 42);
+      spot.addColorStop(0, `#fff8e0`);
+      spot.addColorStop(1, `rgba(255, 248, 224, 0)`);
+      ctx.fillStyle = spot;
+      ctx.beginPath(); ctx.arc(lx, 24, 42, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Storefront timber slats / architectural framing
+    ctx.fillStyle = s.arch === `mall_kids` ? `#e8efe8` : `#3b3028`;
+    ctx.fillRect(24, 42, 355, 248);
+
+    // Warm restaurant interior glow
+    ctx.fillStyle = s.arch === `mall_kids` ? `#f6f9f4` : `#f3d9a8`;
+    ctx.fillRect(46, 118, 310, 162);
+
+    // Vertical wooden slats
+    ctx.fillStyle = s.arch === `mall_kids` ? `#9cb3a4` : `#594230`;
+    for (let sx = 46; sx < 140; sx += 14) {
+      ctx.fillRect(sx, 118, 5, 162);
+    }
+
+    if (s.arch === `mall_japanese`) {
+      // Noren curtains
+      for (let nx = 152; nx < 310; nx += 42) {
+        ctx.fillStyle = `#9e2a22`;
+        ctx.fillRect(nx, 118, 36, 48);
+        ctx.fillStyle = `#f4f1ea`;
+        ctx.beginPath(); ctx.arc(nx + 18, 142, 8, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (s.arch === `mall_lantern`) {
+      // 時時香 signature sky lanterns + rice jar display
+      drawLantern(ctx, 290, 148, 18, `#d6432b`);
+      drawLantern(ctx, 326, 165, 15, `#e29b2d`);
+      ctx.fillStyle = `#e8e3d5`;
+      for (let jx = 160; jx < 250; jx += 28) {
+        ctx.fillRect(jx, 180, 18, 28);
+      }
+    } else if (s.arch === `mall_kids`) {
+      // Ball pit & colorful slide silhouette behind glass
+      const ballCols = [`#9e3b2b`, `#4a5d46`, `#d9922b`, `#3b596a`];
+      for (let b = 0; b < 18; b++) {
+        ctx.fillStyle = ballCols[b % 4];
+        ctx.beginPath(); ctx.arc(165 + (b * 11) % 140, 248 + (b % 3) * 8, 7, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    drawSignboard(ctx, 42, 56, 280, 48, s.signText, s.signBg, s.signFg, `mall`);
+  } else {
+    // Zone 5: Heritage Courtyard, Minimalist White Cafe, Mountain Sunset, Pine Garden
+    if (s.arch === `hilltop_deck`) {
+      // Sunset & twinkling city lights panorama
+      const sunset = ctx.createLinearGradient(0, 0, 0, H);
+      sunset.addColorStop(0, `#29324a`);
+      sunset.addColorStop(0.42, `#9c4b3b`);
+      sunset.addColorStop(0.68, `#e89c54`);
+      sunset.addColorStop(1, `#2b2420`);
+      ctx.fillStyle = sunset;
+      ctx.fillRect(0, 0, W, H);
+
+      // Mountain ridges
+      ctx.fillStyle = `#2a2a2d`;
+      ctx.beginPath();
+      ctx.moveTo(0, 195); ctx.lineTo(140, 155); ctx.lineTo(290, 185); ctx.lineTo(440, 150); ctx.lineTo(640, 190); ctx.lineTo(640, 290); ctx.lineTo(0, 290);
+      ctx.closePath(); ctx.fill();
+
+      // City night lights sparkles in valley
+      ctx.fillStyle = `#ffe294`;
+      for (let lx = 24; lx < 420; lx += 13) {
+        const ly = 205 + ((lx * 37) % 48);
+        ctx.fillRect(lx, ly, 2.5, 2.5);
+      }
+
+      // Wooden deck canopy & string bulbs
+      ctx.fillStyle = `#453324`;
+      ctx.fillRect(28, 78, 300, 18);
+      ctx.fillRect(36, 96, 12, 185);
+      ctx.fillRect(306, 96, 12, 185);
+      for (let bx = 56; bx <= 290; bx += 46) {
+        ctx.fillStyle = `#fff3ba`;
+        ctx.beginPath(); ctx.arc(bx, 102, 4, 0, Math.PI * 2); ctx.fill();
+      }
+      drawSignboard(ctx, 42, 34, 240, 42, s.signText, s.signBg, s.signFg, `wood`);
+    } else if (s.arch === `white_minimal`) {
+      // LAIFA pure white architectural facade
+      ctx.fillStyle = `#e6e2d8`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = `#ffffff`;
+      ctx.fillRect(34, 34, 340, 250);
+      ctx.strokeStyle = `#d2cbbd`;
+      ctx.strokeRect(34, 34, 340, 250);
+      // Black steel glass doorway
+      ctx.fillStyle = `#2a2926`;
+      ctx.fillRect(210, 118, 122, 166);
+      ctx.fillStyle = `#e8d8bd`;
+      ctx.fillRect(218, 126, 106, 150);
+      // Minimal bench & potted olive tree
+      ctx.fillStyle = `#bfb9ae`;
+      ctx.fillRect(72, 242, 105, 16);
+      ctx.fillStyle = `#4a5d46`;
+      ctx.beginPath(); ctx.arc(72, 194, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#70543a`;
+      ctx.fillRect(62, 224, 20, 46);
+      drawSignboard(ctx, 56, 66, 210, 42, s.signText, s.signBg, s.signFg, `minimal`);
+    } else if (s.arch === `pine_garden`) {
+      // 五葉松庭園餐廳: pine tree silhouettes + traditional pavilion
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, `#cad7cd`);
+      sky.addColorStop(1, `#e7e2d5`);
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+
+      // Garden roof pavilion
+      ctx.fillStyle = `#3b3733`;
+      ctx.beginPath();
+      ctx.moveTo(28, 126); ctx.lineTo(195, 74); ctx.lineTo(368, 126); ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = `#ebe4d6`;
+      ctx.fillRect(58, 126, 280, 148);
+      ctx.fillStyle = `#8c472e`;
+      ctx.fillRect(58, 126, 12, 148);
+      ctx.fillRect(326, 126, 12, 148);
+
+      // Sculpted five-needle pine clouds
+      ctx.fillStyle = `#2f4a36`;
+      [[62, 168, 34], [98, 148, 28], [326, 182, 32]].forEach(([px, py, pr]) => {
+        ctx.beginPath(); ctx.ellipse(px, py, pr, pr * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+      });
+      drawSignboard(ctx, 94, 52, 205, 42, s.signText, s.signBg, s.signFg, `wood`);
+    } else {
+      // Red brick heritage house (紅磚園邸 & 微間素生)
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, `#d7ded7`);
+      sky.addColorStop(1, `#ebe5d8`);
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+
+      drawBrickWall(ctx, 32, 62, 338, 224, `#9e4b36`, `#d8cfc2`);
+      // Industrial black-framed windows
+      ctx.fillStyle = `#1c1b18`;
+      ctx.fillRect(62, 134, 126, 108);
+      ctx.fillStyle = `#f7dfa8`;
+      ctx.fillRect(68, 140, 54, 46);
+      ctx.fillRect(128, 140, 54, 46);
+      ctx.fillRect(68, 192, 54, 44);
+      ctx.fillRect(128, 192, 54, 44);
+
+      if (s.arch === `redbrick_capybara`) {
+        // Courtyard lawn + cute capybara & upright meerkat!
+        ctx.fillStyle = `#59724e`;
+        ctx.fillRect(28, 248, 344, 46);
+        // Capybara silhouette
+        ctx.fillStyle = `#7c5838`;
+        ctx.beginPath(); ctx.ellipse(248, 248, 26, 17, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(272, 236, 12, 10, 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `#2a1d13`;
+        ctx.beginPath(); ctx.arc(277, 234, 2, 0, Math.PI * 2); ctx.fill();
+        // Upright Meerkat
+        ctx.fillStyle = `#9e7e56`;
+        ctx.beginPath(); ctx.ellipse(308, 244, 6, 16, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(308, 225, 6, 0, Math.PI * 2); ctx.fill();
+      } else {
+        // Raw concrete low wall & trailing vines for 微間素生
+        ctx.fillStyle = `#aba69c`;
+        ctx.fillRect(28, 234, 344, 52);
+        ctx.fillStyle = `#4a5d46`;
+        for (let vx = 42; vx < 210; vx += 24) {
+          ctx.beginPath(); ctx.arc(vx, 82 + (vx % 18), 11, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      drawSignboard(ctx, 56, 48, 220, 44, s.signText, s.signBg, s.signFg, `wood`);
+    }
+  }
+}
+
+function drawSignatureDishForeground(ctx, W, H, shop) {
+  const dish = shop.scene.dish;
+  // Foreground wooden/slate tasting counter surface on bottom-right
+  const tableGrad = ctx.createLinearGradient(0, 228, 0, H);
+  tableGrad.addColorStop(0, `#4f3d2f`);
+  tableGrad.addColorStop(1, `#2c2119`);
+  ctx.fillStyle = tableGrad;
+  ctx.beginPath();
+  ctx.moveTo(270, 360);
+  ctx.lineTo(340, 236);
+  ctx.lineTo(W, 212);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Table bevel highlight
+  ctx.strokeStyle = `rgba(255, 242, 220, 0.22)`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(270, 360);
+  ctx.lineTo(340, 236);
+  ctx.lineTo(W, 212);
+  ctx.stroke();
+
+  const cx = 492;
+  const cy = 278;
+
+  // Cast shadow beneath plate
+  ctx.save();
+  ctx.fillStyle = `rgba(15, 12, 10, 0.48)`;
+  ctx.beginPath();
+  ctx.ellipse(cx + 6, cy + 16, 94, 42, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (dish === `steak_cheese`) {
+    // Cast-iron skillet + steak + torched cheese waterfall + egg
+    ctx.fillStyle = `#1c1b18`;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 94, 44, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `#44403a`; ctx.lineWidth = 3; ctx.stroke();
+    // Noodles
+    ctx.fillStyle = `#e8c266`;
+    ctx.beginPath(); ctx.ellipse(cx - 26, cy + 4, 34, 18, 0, 0, Math.PI * 2); ctx.fill();
+    // Steak
+    ctx.fillStyle = `#6e331e`;
+    ctx.beginPath(); ctx.ellipse(cx + 18, cy - 2, 42, 22, -0.1, 0, Math.PI * 2); ctx.fill();
+    // Melted torched cheese waterfall
+    ctx.fillStyle = `#f7cf54`;
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, cy - 16);
+    ctx.quadraticCurveTo(cx + 22, cy - 28, cx + 52, cy - 8);
+    ctx.quadraticCurveTo(cx + 42, cy + 20, cx + 10, cy + 14);
+    ctx.quadraticCurveTo(cx - 10, cy + 24, cx - 18, cy + 2);
+    ctx.closePath(); ctx.fill();
+    // Torched sear spots
+    ctx.fillStyle = `#a85119`;
+    ctx.beginPath(); ctx.arc(cx + 15, cy - 8, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 32, cy + 2, 4, 0, Math.PI * 2); ctx.fill();
+    // Egg
+    ctx.fillStyle = `#fffdf5`;
+    ctx.beginPath(); ctx.ellipse(cx - 46, cy - 10, 18, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#f09a1a`;
+    ctx.beginPath(); ctx.arc(cx - 46, cy - 10, 7, 0, Math.PI * 2); ctx.fill();
+    drawSteam(ctx, cx, cy - 30, 3);
+  } else if (dish === `duck_rice`) {
+    // Rice bowl covered in glossy sliced duck leg + herbal soup bowl
+    ctx.fillStyle = `#f7f4ec`;
+    ctx.beginPath(); ctx.ellipse(cx - 20, cy + 4, 68, 34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#8c4c26`;
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath(); ctx.ellipse(cx - 46 + i * 11, cy + (i % 2) * 4 - 2, 16, 10, 0.35, 0, Math.PI * 2); ctx.fill();
+    }
+    // Duck skin highlight
+    ctx.fillStyle = `#c97b3e`;
+    ctx.beginPath(); ctx.ellipse(cx - 20, cy - 4, 38, 12, 0, 0, Math.PI * 2); ctx.fill();
+    // Side dark angelica soup bowl
+    ctx.fillStyle = `#2a2622`;
+    ctx.beginPath(); ctx.ellipse(cx + 66, cy - 18, 36, 19, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#4f2a14`;
+    ctx.beginPath(); ctx.ellipse(cx + 66, cy - 18, 30, 14, 0, 0, Math.PI * 2); ctx.fill();
+    drawSteam(ctx, cx + 66, cy - 34, 2);
+  } else if (dish === `grilled_corn`) {
+    // Diagonal charred waxy corn on skewer over dark stones
+    ctx.fillStyle = `#292623`;
+    for (let sx = cx - 50; sx <= cx + 50; sx += 16) {
+      ctx.beginPath(); ctx.arc(sx, cy + 16, 10, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.translate(cx, cy - 6);
+    ctx.rotate(-0.35);
+    ctx.fillStyle = `#cfa03c`;
+    roundRectPath(ctx, -62, -16, 124, 32, 14); ctx.fill();
+    // Dark savory sauce glaze & charred spots
+    ctx.fillStyle = `#6e2e14`;
+    for (let kx = -48; kx <= 44; kx += 15) {
+      ctx.beginPath(); ctx.ellipse(kx, (kx % 2) * 5 - 3, 6, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = `#dfd8c6`;
+    ctx.fillRect(60, -3, 28, 6);
+  } else if (dish === `luwei`) {
+    // Braised platter: glossy chicken skin, tempura, king oyster mushroom, tofu, scallions
+    ctx.fillStyle = `#f7f4ec`;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 86, 40, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#8a4a24`;
+    ctx.beginPath(); ctx.ellipse(cx - 28, cy - 4, 24, 15, 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#b87638`;
+    ctx.beginPath(); ctx.ellipse(cx + 16, cy - 8, 22, 13, -0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#d6b685`;
+    ctx.fillRect(cx - 12, cy + 4, 24, 16);
+    ctx.fillStyle = `#e8decb`;
+    ctx.fillRect(cx + 22, cy + 2, 26, 16);
+    // Scallions
+    ctx.fillStyle = `#4a7c44`;
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath(); ctx.arc(cx - 32 + i * 10, cy - 8 + (i % 3) * 7, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (dish === `stinky_tofu` || dish === `fried_chicken`) {
+    // Golden fried cubes/cutlet with pickled cabbage / pepper dust
+    ctx.fillStyle = `#ece8dd`;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 84, 38, 0, 0, Math.PI * 2); ctx.fill();
+    if (dish === `stinky_tofu`) {
+      const cubes = [[-36, -12], [0, -14], [28, -8], [-22, 6], [14, 8]];
+      cubes.forEach(([ox, oy]) => {
+        ctx.fillStyle = `#d9932c`;
+        roundRectPath(ctx, cx + ox - 14, cy + oy - 10, 28, 20, 4); ctx.fill();
+        ctx.fillStyle = `#9e2a22`;
+        ctx.beginPath(); ctx.arc(cx + ox, cy + oy, 4, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.fillStyle = `#e8dfc0`;
+      ctx.beginPath(); ctx.ellipse(cx + 38, cy + 4, 18, 11, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = `#d98d26`;
+      ctx.beginPath(); ctx.ellipse(cx - 10, cy, 56, 26, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#70421b`;
+      for (let p = 0; p < 14; p++) {
+        ctx.fillRect(cx - 42 + (p * 7) % 66, cy - 12 + (p * 5) % 22, 2, 2);
+      }
+    }
+  } else if (dish === `red_vermicelli` || dish === `tofu_stew` || dish === `stinky_pot` || dish === `kids_pot` || dish === `stone_pot`) {
+    // Ceramic bowl or individual hotpot bubbling with rich toppings
+    const isPot = dish !== `red_vermicelli`;
+    ctx.fillStyle = isPot ? `#23211e` : `#f7f4ec`;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 2, 82, 42, 0, 0, Math.PI * 2); ctx.fill();
+    const soupColor = dish === `tofu_stew` ? `#c4331d` : dish === `red_vermicelli` ? `#964b22` : dish === `kids_pot` ? `#e6c87e` : `#c88a4b`;
+    ctx.fillStyle = soupColor;
+    ctx.beginPath(); ctx.ellipse(cx, cy - 2, 70, 34, 0, 0, Math.PI * 2); ctx.fill();
+    // Toppings
+    ctx.fillStyle = `#f7f4ec`;
+    ctx.beginPath(); ctx.arc(cx - 22, cy - 6, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#7d9960`;
+    ctx.beginPath(); ctx.ellipse(cx + 22, cy - 4, 16, 9, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#b83227`;
+    ctx.beginPath(); ctx.ellipse(cx - 4, cy + 8, 18, 9, 0, 0, Math.PI * 2); ctx.fill();
+    if (dish === `tofu_stew`) {
+      ctx.fillStyle = `#f59c1a`;
+      ctx.beginPath(); ctx.arc(cx, cy - 4, 7, 0, Math.PI * 2); ctx.fill();
+    }
+    drawSteam(ctx, cx, cy - 32, 3);
+  } else if (dish === `leg_rice` || dish === `donburi` || dish === `pine_banquet` || dish === `capybara_meal`) {
+    // Rich Taiwanese/Japanese meat-over-rice platter
+    ctx.fillStyle = dish === `donburi` ? `#231f1d` : `#f7f4ec`;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 2, 84, 40, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#fffdf5`;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 66, 30, 0, 0, Math.PI * 2); ctx.fill();
+    if (dish === `capybara_meal`) {
+      // Tomato rice + roasted chicken leg + capybara iced drink
+      ctx.fillStyle = `#d6653b`;
+      ctx.beginPath(); ctx.ellipse(cx - 20, cy, 34, 20, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#8c4724`;
+      ctx.beginPath(); ctx.ellipse(cx + 24, cy + 2, 26, 16, 0.2, 0, Math.PI * 2); ctx.fill();
+      // Cute latte glass
+      ctx.fillStyle = `#e8c499`;
+      roundRectPath(ctx, cx + 62, cy - 48, 28, 42, 4); ctx.fill();
+      ctx.fillStyle = `#8c5d38`;
+      ctx.beginPath(); ctx.arc(cx + 76, cy - 50, 12, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = `#8a3c1e`;
+      for (let m = 0; m < 5; m++) {
+        ctx.beginPath(); ctx.ellipse(cx - 32 + m * 16, cy - 4 + (m % 2) * 8, 16, 11, 0.3, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = `#d9a441`;
+      ctx.beginPath(); ctx.ellipse(cx + 26, cy + 10, 20, 9, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    drawSteam(ctx, cx, cy - 28, 2);
+  } else if (dish === `egg_tart` || dish === `egg_cake` || dish === `mantou` || dish === `tiramisu`) {
+    // Golden Pastry / Dessert Plate
+    ctx.fillStyle = `#f9f7f2`;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 4, 84, 38, 0, 0, Math.PI * 2); ctx.fill();
+    if (dish === `tiramisu`) {
+      ctx.fillStyle = `#f2e4ce`;
+      roundRectPath(ctx, cx - 50, cy - 26, 56, 36, 3); ctx.fill();
+      ctx.fillStyle = `#593520`;
+      ctx.fillRect(cx - 50, cy - 28, 56, 10);
+      // Pour-over glass carafe beside
+      ctx.fillStyle = `rgba(90, 48, 24, 0.85)`;
+      ctx.beginPath(); ctx.arc(cx + 42, cy - 6, 20, 0, Math.PI * 2); ctx.fill();
+    } else {
+      const pastryCols = dish === `mantou` ? [`#f2e6c9`, `#e09b32`] : [`#e8a838`, `#d68c24`];
+      [[-32, -4], [4, -10], [36, 0]].forEach(([px, py], idx) => {
+        ctx.fillStyle = pastryCols[idx % 2];
+        ctx.beginPath(); ctx.ellipse(cx + px, cy + py, 22, 14, 0, 0, Math.PI * 2); ctx.fill();
+        if (dish === `egg_tart`) {
+          ctx.fillStyle = `#f7cf54`;
+          ctx.beginPath(); ctx.ellipse(cx + px, cy + py - 2, 13, 8, 0, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+    }
+  } else if (dish === `cherry_soda` || dish === `hilltop_coffee`) {
+    // Tall Cherry Soda + Tanghulu OR Scenic Coffee Mug
+    if (dish === `cherry_soda`) {
+      ctx.fillStyle = `#b82929`;
+      roundRectPath(ctx, cx - 22, cy - 58, 44, 72, 6); ctx.fill();
+      ctx.fillStyle = `#fffdf5`;
+      ctx.beginPath(); ctx.arc(cx, cy - 60, 16, 0, Math.PI * 2); ctx.fill();
+      // Tanghulu skewer
+      ctx.strokeStyle = `#d6c6a8`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx + 38, cy + 10); ctx.lineTo(cx + 66, cy - 68); ctx.stroke();
+      [0, 1, 2].forEach(k => {
+        ctx.fillStyle = `#c92424`;
+        ctx.beginPath(); ctx.arc(cx + 48 + k * 7, cy - 22 - k * 18, 7, 0, Math.PI * 2); ctx.fill();
+      });
+    } else {
+      ctx.fillStyle = `#f7f4ec`;
+      ctx.beginPath(); ctx.ellipse(cx, cy + 12, 64, 24, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#ebe6db`;
+      roundRectPath(ctx, cx - 28, cy - 28, 56, 40, 8); ctx.fill();
+      ctx.fillStyle = `#70472b`;
+      ctx.beginPath(); ctx.ellipse(cx, cy - 28, 25, 10, 0, 0, Math.PI * 2); ctx.fill();
+      // Latte art heart
+      ctx.fillStyle = `#fffdf5`;
+      ctx.beginPath(); ctx.arc(cx, cy - 28, 6, 0, Math.PI * 2); ctx.fill();
+      drawSteam(ctx, cx, cy - 42, 2);
+    }
+  } else {
+    // Steamed rouyuan, noodles, charcoal sausage, pasta
+    ctx.fillStyle = `#f7f4ec`;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 2, 84, 38, 0, 0, Math.PI * 2); ctx.fill();
+    if (dish === `charcoal_sausage`) {
+      ctx.fillStyle = `#f2ead8`;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 62, 22, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#a63224`;
+      ctx.beginPath(); ctx.ellipse(cx, cy - 2, 48, 12, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `#6e853c`;
+      ctx.fillRect(cx - 26, cy - 8, 50, 5);
+    } else if (dish === `steamed_rouyuan`) {
+      [[-24, -2], [22, 2]].forEach(([rx, ry]) => {
+        ctx.fillStyle = `rgba(225, 220, 206, 0.92)`;
+        ctx.beginPath(); ctx.ellipse(cx + rx, cy + ry, 28, 18, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `#6e3c24`;
+        ctx.beginPath(); ctx.ellipse(cx + rx, cy + ry - 4, 15, 7, 0, 0, Math.PI * 2); ctx.fill();
+      });
+    } else {
+      // Creamy shrimp pasta or garlic meat-sauce noodles
+      ctx.fillStyle = dish === `pool_pasta` ? `#f2d591` : `#e3b856`;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 56, 26, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = dish === `pool_pasta` ? `#d95b38` : `#703d24`;
+      ctx.beginPath(); ctx.arc(cx - 16, cy - 6, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 18, cy - 2, 9, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ---- Storefront details layer: pavement, scooters, queue, open sign, house-number plate ----
+const OUTDOOR_ARCH = ['nightmarket_shop','nightmarket_stall','twin_stall','street_tile','modern_street','alley_cart','wood_corner','alley_steamer','retro_cart','bakery_window'];
+
+function drawScooter(ctx, bx, by, color) {
+  ctx.fillStyle = `rgba(0,0,0,0.28)`;
+  ctx.beginPath(); ctx.ellipse(bx + 30, by + 11, 42, 5, 0, 0, Math.PI * 2); ctx.fill();
+  // body
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(bx + 4, by - 6);
+  ctx.quadraticCurveTo(bx + 22, by - 12, bx + 34, by - 8);
+  ctx.lineTo(bx + 50, by - 30);
+  ctx.lineTo(bx + 58, by - 28);
+  ctx.lineTo(bx + 56, by - 4);
+  ctx.quadraticCurveTo(bx + 30, by + 4, bx + 4, by - 6);
+  ctx.closePath(); ctx.fill();
+  // seat
+  ctx.fillStyle = `#1c1b18`;
+  roundRectPath(ctx, bx + 14, by - 20, 30, 8, 3); ctx.fill();
+  // handlebar + headlight
+  ctx.strokeStyle = `#2a2824`; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(bx + 52, by - 28); ctx.lineTo(bx + 50, by - 42); ctx.lineTo(bx + 60, by - 42); ctx.stroke();
+  ctx.fillStyle = `#fff1b8`;
+  ctx.beginPath(); ctx.arc(bx + 62, by - 38, 3.5, 0, Math.PI * 2); ctx.fill();
+  // wheels
+  [[bx + 4, by], [bx + 56, by]].forEach(([x, y]) => {
+    ctx.fillStyle = `#1c1b18`; ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `#b9b6ae`; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+function drawPerson(ctx, x, baseY, h, color) {
+  ctx.fillStyle = `rgba(0,0,0,0.22)`;
+  ctx.beginPath(); ctx.ellipse(x, baseY + 2, 12, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 5, baseY - h * 0.42, 4, h * 0.42);
+  ctx.fillRect(x + 1, baseY - h * 0.42, 4, h * 0.42);
+  roundRectPath(ctx, x - 9, baseY - h * 0.82, 18, h * 0.46, 6); ctx.fill();
+  ctx.fillStyle = `#d8b690`;
+  ctx.beginPath(); ctx.arc(x, baseY - h * 0.92, 6.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = `#2a2420`;
+  ctx.beginPath(); ctx.arc(x, baseY - h * 0.95, 6.5, Math.PI, Math.PI * 2); ctx.fill();
+}
+
+function drawStorefrontDetails(ctx, W, H, shop) {
+  const sc = shop.scene;
+  if (!OUTDOOR_ARCH.includes(sc.arch)) return;
+  const night = sc.arch.startsWith(`nightmarket`) || sc.arch === `twin_stall`;
+
+  // Pavement + kerb + paving joints
+  const pv = ctx.createLinearGradient(0, 300, 0, H);
+  pv.addColorStop(0, night ? `#3a3029` : `#a79d8d`);
+  pv.addColorStop(1, night ? `#241d18` : `#80766a`);
+  ctx.fillStyle = pv; ctx.fillRect(0, 300, W, H - 300);
+  ctx.fillStyle = night ? `#5a4a3c` : `#d0c7b7`; ctx.fillRect(0, 300, W, 5);
+  ctx.strokeStyle = `rgba(0,0,0,0.18)`; ctx.lineWidth = 1;
+  for (let x = -20; x < W; x += 46) { ctx.beginPath(); ctx.moveTo(x + 40, 305); ctx.lineTo(x, H); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(0, 332); ctx.lineTo(W, 332); ctx.stroke();
+
+  // House-number enamel plate from the real address
+  const m = shop.address.match(/(\d+)(?:之\d+)?號/);
+  if (m) {
+    const px = 326, py = 58, pw = 40, ph = 22;
+    ctx.fillStyle = `#1f4f8f`; roundRectPath(ctx, px, py, pw, ph, 3); ctx.fill();
+    ctx.strokeStyle = `#f4f1ea`; ctx.lineWidth = 1.5; roundRectPath(ctx, px + 2, py + 2, pw - 4, ph - 4, 2); ctx.stroke();
+    ctx.fillStyle = `#f4f1ea`; ctx.font = `700 12px "Noto Sans TC", sans-serif`;
+    ctx.textAlign = `center`; ctx.textBaseline = `middle`;
+    ctx.fillText(`${m[1]}號`, px + pw / 2, py + ph / 2 + 1, pw - 8);
+  }
+
+  // "營業中" open sign hanging on the glass
+  const ox = 290, oy = 152, ow = 46, oh = 20;
+  ctx.fillStyle = `#1c1b18`; roundRectPath(ctx, ox, oy, ow, oh, 3); ctx.fill();
+  ctx.save();
+  ctx.shadowColor = night ? `#ff4a33` : `#2fa66a`; ctx.shadowBlur = 8;
+  ctx.fillStyle = night ? `#ff7a5a` : `#6be3a4`;
+  ctx.font = `700 11px "Noto Sans TC", sans-serif`;
+  ctx.textAlign = `center`; ctx.textBaseline = `middle`;
+  ctx.fillText(`營業中`, ox + ow / 2, oy + oh / 2 + 1);
+  ctx.restore();
+
+  // Parked scooter in front of the shop
+  drawScooter(ctx, 40, 322, sc.accent || `#9e3b2b`);
+
+  // Queue silhouettes for places known for lines
+  if (/排隊|人潮|排隊名店/.test(shop.highlight)) {
+    const tone = night ? `#14110f` : `#3b3733`;
+    [[176, 52, tone], [204, 56, `#5a4a40`], [232, 50, tone], [260, 54, `#4a3a30`]].forEach(([x, h, c]) => drawPerson(ctx, x, 318, h * 1.5, c));
+  }
+  ctx.textAlign = `start`; ctx.textBaseline = `alphabetic`;
+}
+
+// ---- Real storefront photos (URL or upload), kept per shop in this browser ----
+const PHOTO_STORE_KEY = `shulin_storefront_photos_v1`;
+const shopPhotos = {};
+const photoCache = {};
+let photoModalShopId = null;
+
+function loadPhotoStore() {
+  try {
+    const raw = window.localStorage && window.localStorage.getItem(PHOTO_STORE_KEY);
+    if (raw) Object.assign(shopPhotos, JSON.parse(raw));
+  } catch (err) { /* storage unavailable */ }
+}
+
+function savePhotoStore() {
+  try {
+    window.localStorage.setItem(PHOTO_STORE_KEY, JSON.stringify(shopPhotos));
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+function getShopPhoto(id) {
+  const src = shopPhotos[id];
+  if (!src) return null;
+  let c = photoCache[id];
+  if (!c || c.src !== src) {
+    const img = new Image();
+    c = { src, img, status: `loading` };
+    photoCache[id] = c;
+    img.onload = () => { c.status = `ok`; repaintShop(id); };
+    img.onerror = () => {
+      c.status = `error`;
+      repaintShop(id);
+      setPhotoMsg(`這張照片無法載入（網址失效或網站不允許外部引用），已改回手繪示意圖。`);
+    };
+    img.src = src;
+  }
+  return c.status === `ok` ? c.img : null;
+}
+
+function repaintShop(id) {
+  const shop = SHOPS.find(x => x.id === id);
+  if (!shop) return;
+  syncVisual(id);
+  const pc = document.getElementById(`photo-preview-canvas`);
+  if (pc && photoModalShopId === id) renderShopScene(pc, shop);
+}
+
+// ---- View modes: Google map (default) / hand-drawn sketch / real photo ----
+const viewModes = {};
+let lastCardSig = ``;
+
+function getViewMode(id) {
+  let v = viewModes[id] || `map`;
+  if (v === `photo` && !shopPhotos[id]) v = `sketch`;
+  return v;
+}
+
+function mapQuery(shop) {
+  const addr = shop.address.replace(/（[^）]*）/g, ``).split(/\s*[\/／]\s*/)[0];
+  const name = shop.name.replace(/（[^）]*）/g, ``).split(/\s*[\/／]\s*/)[0];
+  return `${name} ${addr}`;
+}
+
+function mapEmbedUrl(shop) {
+  return `https://www.google.com/maps?q=${encodeURIComponent(mapQuery(shop))}&hl=zh-TW&z=17&output=embed`;
+}
+
+function viewTabsHtml(id) {
+  const m = getViewMode(id);
+  const b = (k, label) => `<button type="button" class="${m === k ? `is-active` : ``}" onclick="setViewMode(${id}, '${k}')">${label}</button>`;
+  return b(`map`, `地圖／街景`) + b(`sketch`, `手繪`) + (shopPhotos[id] ? b(`photo`, `實景照片`) : ``);
+}
+
+function setViewMode(id, mode) {
+  viewModes[id] = mode;
+  syncVisual(id);
+}
+
+function syncVisual(id) {
+  const shop = SHOPS.find(x => x.id === id);
+  if (!shop) return;
+  const mode = getViewMode(id);
+  const targets = [[`card-visual-${id}`, `card-canvas-${id}`, `card-tabs-${id}`]];
+  if (appState.selectedId === id) targets.push([`inspector-visual-wrap`, `inspector-canvas`, `inspector-view-tabs`]);
+  targets.forEach(([b, c, t]) => {
+    const box = document.getElementById(b);
+    if (!box) return;
+    box.classList.remove(`mode-map`, `mode-sketch`, `mode-photo`);
+    box.classList.add(`mode-${mode}`);
+    const tb = document.getElementById(t);
+    if (tb) tb.innerHTML = viewTabsHtml(id);
+    const cv = document.getElementById(c);
+    if (cv && mode !== `map`) renderShopScene(cv, shop, mode);
+  });
+  document.querySelectorAll(`.js-photo-btn-${id} .photo-btn-label`).forEach(el => { el.textContent = shopPhotos[id] ? `更換照片` : `放入實景照片`; });
+}
+
+function patchCards(list) {
+  list.forEach(shop => {
+    const w = document.getElementById(`shop-card-${shop.id}`);
+    if (!w) return;
+    const a = w.querySelector(`.shop-card`);
+    if (a) a.classList.toggle(`is-selected`, shop.id === appState.selectedId);
+    const fav = appState.favorites.includes(shop.id);
+    const fb = document.getElementById(`card-fav-${shop.id}`);
+    if (fb) {
+      fb.classList.toggle(`is-fav`, fav);
+      const l = fb.querySelector(`.js-fav-label`);
+      if (l) l.textContent = fav ? `已收藏` : `加入清單`;
+    }
+  });
+}
+
+function drawSourceTag(ctx, W, text, isPhoto) {
+  ctx.save();
+  ctx.font = `600 12px "Noto Sans TC", sans-serif`;
+  const w = ctx.measureText(text).width + 16;
+  ctx.fillStyle = isPhoto ? `rgba(61, 99, 66, 0.92)` : `rgba(28, 27, 24, 0.62)`;
+  roundRectPath(ctx, W - w - 8, 8, w, 22, 3); ctx.fill();
+  ctx.fillStyle = `#f4f1ea`; ctx.textAlign = `center`; ctx.textBaseline = `middle`;
+  ctx.fillText(text, W - w / 2 - 8, 19.5);
+  ctx.restore();
+}
+
+function renderShopScene(canvas, shop, mode) {
+  if (!canvas || !shop) return;
+  const ctx = canvas.getContext(`2d`);
+  if (!ctx) return;
+  const W = 640;
+  const H = 360;
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W;
+    canvas.height = H;
+  }
+  ctx.clearRect(0, 0, W, H);
+
+  const photo = mode === `sketch` ? null : getShopPhoto(shop.id);
+  if (photo) {
+    // object-fit: cover
+    const r = Math.max(W / photo.naturalWidth, H / photo.naturalHeight);
+    const dw = photo.naturalWidth * r, dh = photo.naturalHeight * r;
+    ctx.drawImage(photo, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    drawSourceTag(ctx, W, `實景照片`, true);
+  } else {
+    drawArchitectureBackground(ctx, W, H, shop);
+    drawStorefrontDetails(ctx, W, H, shop);
+    drawSignatureDishForeground(ctx, W, H, shop);
+    // soft vignette for a more photographic feel
+    const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.72);
+    vg.addColorStop(0, `rgba(0,0,0,0)`);
+    vg.addColorStop(1, `rgba(0,0,0,0.22)`);
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    drawSourceTag(ctx, W, `手繪示意`, false);
+  }
+
+  ctx.strokeStyle = `rgba(28, 27, 24, 0.25)`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, H - 2);
+}
+
+// ---- Photo modal actions ----
+function setPhotoMsg(t) { const el = document.getElementById(`photo-modal-msg`); if (el) el.textContent = t || ``; }
+
+function openPhotoModal(id) {
+  photoModalShopId = id;
+  const shop = SHOPS.find(x => x.id === id);
+  document.getElementById(`photo-modal-title`).textContent = `${shop.name}｜店面照片`;
+  const cur = shopPhotos[id];
+  document.getElementById(`photo-url-input`).value = cur && !cur.startsWith(`data:`) ? cur : ``;
+  setPhotoMsg(``);
+  document.getElementById(`photo-modal`).classList.add(`is-open`);
+  renderShopScene(document.getElementById(`photo-preview-canvas`), shop);
+  if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+}
+
+function closePhotoModal() {
+  document.getElementById(`photo-modal`).classList.remove(`is-open`);
+  const id = photoModalShopId;
+  photoModalShopId = null;
+  if (id != null) syncVisual(id);
+}
+
+function setShopPhoto(id, src) {
+  shopPhotos[id] = src;
+  viewModes[id] = `photo`;
+  delete photoCache[id];
+  const ok = savePhotoStore();
+  setPhotoMsg(ok ? `已套用，下次開啟仍會保留。` : `已套用，但瀏覽器儲存空間不可用或已滿，關閉頁面後可能不會保留。`);
+  repaintShop(id);
+}
+
+function applyPhotoUrl() {
+  const v = document.getElementById(`photo-url-input`).value.trim();
+  if (!/^https?:\/\//i.test(v)) { setPhotoMsg(`請貼上以 http:// 或 https:// 開頭的圖片網址。`); return; }
+  setShopPhoto(photoModalShopId, v);
+}
+
+function onPhotoFile(input) {
+  const f = input.files && input.files[0];
+  if (!f || photoModalShopId == null) return;
+  const id = photoModalShopId;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 960;
+      const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement(`canvas`);
+      c.width = Math.round(img.naturalWidth * r);
+      c.height = Math.round(img.naturalHeight * r);
+      c.getContext(`2d`).drawImage(img, 0, 0, c.width, c.height);
+      setShopPhoto(id, c.toDataURL(`image/jpeg`, 0.82));
+    };
+    img.onerror = () => setPhotoMsg(`無法讀取這個檔案，請換一張 JPG／PNG 圖片。`);
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(f);
+  input.value = ``;
+}
+
+function removeShopPhoto() {
+  const id = photoModalShopId;
+  if (id == null) return;
+  delete shopPhotos[id];
+  delete photoCache[id];
+  if (viewModes[id] === `photo`) viewModes[id] = `map`;
+  savePhotoStore();
+  document.getElementById(`photo-url-input`).value = ``;
+  setPhotoMsg(`已移除，改回手繪店面示意圖。`);
+  repaintShop(id);
+}
+
+document.addEventListener(`keydown`, ev => { if (ev.key === `Escape` && photoModalShopId != null) closePhotoModal(); });
+
+function shopLinksHtml(shop) {
+  const q = encodeURIComponent(mapQuery(shop));
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${q}`;
+  const imgUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${shop.name} 樹林 店面`)}`;
+  const has = !!shopPhotos[shop.id];
+  return `
+    <a class="card-btn" href="${mapUrl}" target="_blank" rel="noopener"><i data-lucide="external-link" width="14" height="14"></i>在 Google 地圖開啟</a>
+    <a class="card-btn" href="${imgUrl}" target="_blank" rel="noopener"><i data-lucide="search" width="14" height="14"></i>搜尋店面照片</a>
+    <button type="button" class="card-btn js-photo-btn-${shop.id}" onclick="openPhotoModal(${shop.id})"><i data-lucide="image-plus" width="14" height="14"></i><span class="photo-btn-label">${has ? `更換照片` : `放入實景照片`}</span></button>`;
+}
+
+// =========================================================================
+// 4. FILTERING & RENDERING LOGIC
+// =========================================================================
+function getFilteredShops() {
+  const q = appState.searchQuery.trim().toLowerCase();
+  return SHOPS.filter(shop => {
+    if (appState.activeZone !== `all` && String(shop.zone) !== String(appState.activeZone)) {
+      return false;
+    }
+    if (appState.activeTag !== `all` && !shop.tags.includes(appState.activeTag)) {
+      return false;
+    }
+    if (appState.onlyFavorites && !appState.favorites.includes(shop.id)) {
+      return false;
+    }
+    if (q) {
+      const hay = `${shop.name} ${shop.address} ${shop.highlight} ${shop.dishes.join(` `)} ${ZONES[shop.zone].name}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderMapPins(filteredIds) {
+  const layer = document.getElementById(`map-pins-layer`);
+  if (!layer) return;
+  const svgNS = `http://www.w3.org/2000/svg`;
+  layer.innerHTML = ``;
+
+  SHOPS.forEach(shop => {
+    const isMatch = filteredIds.includes(shop.id);
+    const isSelected = shop.id === appState.selectedId;
+    const isFav = appState.favorites.includes(shop.id);
+    const zColor = ZONES[shop.zone].color;
+
+    const g = document.createElementNS(svgNS, `g`);
+    g.setAttribute(`class`, `map-pin-group${isMatch ? `` : ` is-dimmed`}${isSelected ? ` is-selected` : ``}`);
+    g.setAttribute(`transform`, `translate(${shop.mapX}, ${shop.mapY})`);
+    g.setAttribute(`tabindex`, `0`);
+    g.setAttribute(`role`, `button`);
+    g.setAttribute(`aria-label`, `${shop.code} ${shop.name}`);
+    g.onclick = function () { selectShop(shop.id); };
+    g.onkeydown = function (ev) {
+      if (ev.key === `Enter` || ev.key === ` `) {
+        ev.preventDefault();
+        selectShop(shop.id);
+      }
+    };
+
+    if (isSelected) {
+      const halo = document.createElementNS(svgNS, `circle`);
+      halo.setAttribute(`r`, `19`);
+      halo.setAttribute(`fill`, `none`);
+      halo.setAttribute(`stroke`, `#9e3b2b`);
+      halo.setAttribute(`stroke-width`, `2`);
+      halo.setAttribute(`stroke-dasharray`, `3 2`);
+      g.appendChild(halo);
+    }
+
+    const circle = document.createElementNS(svgNS, `circle`);
+    circle.setAttribute(`class`, `map-pin-circle`);
+    circle.setAttribute(`r`, isSelected ? `13.5` : `11.5`);
+    circle.setAttribute(`fill`, isSelected ? `#9e3b2b` : zColor);
+    circle.setAttribute(`stroke`, `#f9f7f2`);
+    circle.setAttribute(`stroke-width`, `2`);
+    g.appendChild(circle);
+
+    const num = document.createElementNS(svgNS, `text`);
+    num.setAttribute(`text-anchor`, `middle`);
+    num.setAttribute(`dominant-baseline`, `central`);
+    num.setAttribute(`font-family`, `Geist Mono, monospace`);
+    num.setAttribute(`font-size`, `10`);
+    num.setAttribute(`font-weight`, `700`);
+    num.setAttribute(`fill`, `#f9f7f2`);
+    num.textContent = shop.code;
+    g.appendChild(num);
+
+    if (isFav) {
+      const favDot = document.createElementNS(svgNS, `circle`);
+      favDot.setAttribute(`cx`, `10`);
+      favDot.setAttribute(`cy`, `-10`);
+      favDot.setAttribute(`r`, `4`);
+      favDot.setAttribute(`fill`, `#9e3b2b`);
+      favDot.setAttribute(`stroke`, `#f9f7f2`);
+      favDot.setAttribute(`stroke-width`, `1.2`);
+      g.appendChild(favDot);
+    }
+
+    if (isSelected || (filteredIds.length <= 10 && isMatch)) {
+      const labelBg = document.createElementNS(svgNS, `rect`);
+      const textLen = shop.name.length * 10 + 10;
+      labelBg.setAttribute(`x`, String(-textLen / 2));
+      labelBg.setAttribute(`y`, `15`);
+      labelBg.setAttribute(`width`, String(textLen));
+      labelBg.setAttribute(`height`, `17`);
+      labelBg.setAttribute(`rx`, `2`);
+      labelBg.setAttribute(`fill`, `#f9f7f2`);
+      labelBg.setAttribute(`stroke`, `#1c1b18`);
+      labelBg.setAttribute(`stroke-width`, `0.8`);
+      g.appendChild(labelBg);
+
+      const label = document.createElementNS(svgNS, `text`);
+      label.setAttribute(`y`, `24`);
+      label.setAttribute(`text-anchor`, `middle`);
+      label.setAttribute(`dominant-baseline`, `central`);
+      label.setAttribute(`font-size`, `10`);
+      label.setAttribute(`font-weight`, `600`);
+      label.setAttribute(`fill`, `#1c1b18`);
+      label.textContent = shop.name;
+      g.appendChild(label);
+    }
+
+    layer.appendChild(g);
+  });
+}
+
+function renderInspector() {
+  const shop = SHOPS.find(s => s.id === appState.selectedId) || SHOPS[0];
+  if (!shop) return;
+
+  const mf = document.getElementById(`inspector-map`);
+  const mu = mapEmbedUrl(shop);
+  if (mf && mf.getAttribute(`data-src`) !== mu) { mf.setAttribute(`data-src`, mu); mf.src = mu; }
+  syncVisual(shop.id);
+
+  const codeEl = document.getElementById(`inspector-code`);
+  const zoneChipEl = document.getElementById(`inspector-zone-chip`);
+  const titleEl = document.getElementById(`inspector-title`);
+  const addrEl = document.getElementById(`inspector-address`);
+  const highEl = document.getElementById(`inspector-highlight`);
+  const dishesEl = document.getElementById(`inspector-dishes`);
+  const favBtn = document.getElementById(`inspector-fav-btn`);
+  const favLabel = document.getElementById(`inspector-fav-label`);
+
+  if (codeEl) codeEl.textContent = `NO. ${shop.code}`;
+  if (zoneChipEl) zoneChipEl.textContent = ZONES[shop.zone].name;
+  if (titleEl) titleEl.textContent = shop.name;
+  if (addrEl) addrEl.textContent = shop.address;
+  if (highEl) highEl.textContent = shop.highlight;
+
+  if (dishesEl) {
+    dishesEl.innerHTML = shop.dishes
+      .map((d, i) => `<span class="dish-tag${i === 0 ? ` is-signature` : ``}">${d}</span>`)
+      .join(``);
+  }
+
+  const linksEl = document.getElementById(`inspector-links`);
+  if (linksEl) linksEl.innerHTML = shopLinksHtml(shop);
+  if (window.lucide && typeof window.lucide.createIcons === `function`) window.lucide.createIcons();
+
+  const isFav = appState.favorites.includes(shop.id);
+  if (favBtn) favBtn.className = `card-btn${isFav ? ` is-fav` : ``}`;
+  if (favLabel) favLabel.textContent = isFav ? `已收藏` : `收藏`;
+}
+
+function renderCards(filteredShops) {
+  const grid = document.getElementById(`shop-cards-grid`);
+  const empty = document.getElementById(`empty-state`);
+  const countEl = document.getElementById(`grid-result-count`);
+  const kpiVisible = document.getElementById(`kpi-visible-count`);
+
+  if (!grid || !empty) return;
+
+  if (countEl) countEl.textContent = `共顯示 ${filteredShops.length} / ${SHOPS.length} 家名店`;
+  if (kpiVisible) kpiVisible.textContent = `${filteredShops.length} / ${SHOPS.length}`;
+
+  if (filteredShops.length === 0) {
+    grid.innerHTML = ``;
+    empty.classList.add(`is-visible`);
+    return;
+  }
+  empty.classList.remove(`is-visible`);
+
+  const sig = filteredShops.map(x => x.id).join(`,`);
+  if (sig === lastCardSig && grid.children.length) { patchCards(filteredShops); return; }
+  lastCardSig = sig;
+
+  grid.innerHTML = filteredShops.map(shop => {
+    const isSelected = shop.id === appState.selectedId;
+    const isFav = appState.favorites.includes(shop.id);
+    return `
+      <div class="shop-card-wrapper" id="shop-card-${shop.id}">
+        <article class="shop-card${isSelected ? ` is-selected` : ``}">
+          <div class="card-visual-box mode-${getViewMode(shop.id)}" id="card-visual-${shop.id}" onclick="selectShop(${shop.id}, true)" title="點擊於上方焦點檢視">
+            <canvas class="scene-canvas" id="card-canvas-${shop.id}" width="640" height="360" aria-label="${shop.name} 店家門面與招牌餐點手繪示意圖"></canvas>
+            <iframe class="scene-map" title="${shop.name} Google 地圖" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="${mapEmbedUrl(shop)}"></iframe>
+            <div class="scene-view-tabs" id="card-tabs-${shop.id}" onclick="event.stopPropagation()">${viewTabsHtml(shop.id)}</div>
+            <span class="scene-badge">NO. ${shop.code}</span>
+            <span class="scene-zone-chip">${ZONES[shop.zone].short}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-meta-row">
+              <span>${ZONES[shop.zone].name}</span>
+              <span>${shop.tags.slice(0, 2).join(` · `)}</span>
+            </div>
+            <h3 class="card-title">${shop.name}</h3>
+            <div class="card-address">
+              <i data-lucide="map-pin" width="14" height="14"></i>
+              <span>${shop.address}</span>
+            </div>
+            <p class="card-highlight">${shop.highlight}</p>
+            <div class="card-dishes-block">
+              <span class="card-dishes-label">必點招牌餐點</span>
+              <div class="dish-list">
+                ${shop.dishes.map((d, idx) => `<span class="dish-tag${idx === 0 ? ` is-signature` : ``}">${d}</span>`).join(``)}
+              </div>
+            </div>
+            <div class="card-links">${shopLinksHtml(shop)}</div>
+            <div class="card-footer">
+              <button type="button" class="card-btn" onclick="selectShop(${shop.id}, true)">
+                <i data-lucide="compass" width="15" height="15"></i>
+                地圖定位檢視
+              </button>
+              <button type="button" class="card-btn${isFav ? ` is-fav` : ``}" id="card-fav-${shop.id}" onclick="toggleFavorite(${shop.id})">
+                <i data-lucide="heart" width="15" height="15"></i>
+                <span class="js-fav-label">${isFav ? `已收藏` : `加入清單`}</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    `;
+  }).join(``);
+
+  // Paint every visible card's bespoke storefront + dish scene canvas
+  filteredShops.forEach(shop => {
+    const c = document.getElementById(`card-canvas-${shop.id}`);
+    const mode = getViewMode(shop.id);
+    if (mode !== `map`) renderShopScene(c, shop, mode);
+  });
+
+  if (window.lucide && typeof window.lucide.createIcons === `function`) {
+    window.lucide.createIcons();
+  }
+}
+
+function renderFilterPills() {
+  document.querySelectorAll(`#zone-pills .zone-btn`).forEach(btn => {
+    btn.classList.toggle(`is-active`, btn.dataset.zone === String(appState.activeZone));
+  });
+  document.querySelectorAll(`#tag-pills .tag-btn`).forEach(btn => {
+    btn.classList.toggle(`is-active`, btn.dataset.tag === appState.activeTag);
+  });
+
+  const onlyFavBtn = document.getElementById(`btn-only-fav`);
+  if (onlyFavBtn) {
+    onlyFavBtn.classList.toggle(`is-cinnabar-active`, appState.onlyFavorites);
+  }
+
+  const favCountEl = document.getElementById(`kpi-fav-count`);
+  if (favCountEl) {
+    favCountEl.textContent = `${appState.favorites.length} 家已收藏`;
+  }
+
+  const zoneNote = document.getElementById(`kpi-active-zone-note`);
+  if (zoneNote) {
+    zoneNote.textContent = appState.activeZone === `all`
+      ? `顯示全部五大美食生活圈`
+      : ZONES[appState.activeZone].name;
+  }
+
+  const searchInput = document.getElementById(`shop-search`);
+  if (searchInput && searchInput.value !== appState.searchQuery) {
+    searchInput.value = appState.searchQuery;
+  }
+}
+
+function renderAll() {
+  const filtered = getFilteredShops();
+  const filteredIds = filtered.map(s => s.id);
+
+  // Keep selectedId valid inside filtered view when possible
+  if (filtered.length > 0 && !filteredIds.includes(appState.selectedId)) {
+    appState.selectedId = filtered[0].id;
+  }
+
+  renderFilterPills();
+  renderMapPins(filteredIds);
+  renderInspector();
+  renderCards(filtered);
+}
+
+// =========================================================================
+// 5. CHART.JS BREAKDOWN
+// =========================================================================
+function initBreakdownChart() {
+  const canvas = document.getElementById(`zone-breakdown-chart`);
+  if (!canvas || typeof Chart === `undefined`) return;
+
+  const zoneKeys = [1, 2, 3, 4, 5];
+  const labels = zoneKeys.map(z => ZONES[z].short);
+  const categories = [
+    { key: `夜市／宵夜`, color: `#9e3b2b` },
+    { key: `銅板小吃`, color: `#8a6f48` },
+    { key: `正餐／便當`, color: `#4a5d46` },
+    { key: `咖啡／甜點`, color: `#3b596a` },
+    { key: `親子／聚餐`, color: `#1c1b18` }
+  ];
+
+  const datasets = categories.map(cat => ({
+    label: cat.key,
+    data: zoneKeys.map(z => SHOPS.filter(s => s.zone === z && s.tags.includes(cat.key)).length),
+    backgroundColor: cat.color,
+    borderRadius: 2,
+    barThickness: 18
+  }));
+
+  if (breakdownChartInstance) breakdownChartInstance.destroy();
+  breakdownChartInstance = new Chart(canvas, {
+    type: `bar`,
+    data: { labels, datasets },
+    options: {
+      indexAxis: `y`,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: `bottom`,
+          labels: {
+            color: `#1c1b18`,
+            boxWidth: 12,
+            font: { family: `Noto Sans TC, sans-serif`, size: 12 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: `#d2cbbd` },
+          ticks: { color: `#5e5a51`, stepSize: 2 }
+        },
+        y: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { color: `#1c1b18`, font: { family: `Noto Sans TC, sans-serif`, size: 12, weight: `600` } }
+        }
+      }
+    }
+  });
+}
+
+// =========================================================================
+// 6. USER INTERACTIONS & PERSISTENCE (Hoisted `function` declarations)
+// =========================================================================
+async function persistState() {
+  try {
+    if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === `function`) {
+      await window.notebookAppApi.setAppState({
+        activeZone: appState.activeZone,
+        activeTag: appState.activeTag,
+        searchQuery: appState.searchQuery,
+        onlyFavorites: appState.onlyFavorites,
+        selectedId: appState.selectedId,
+        favorites: appState.favorites
+      });
+    }
+  } catch (err) {
+    // Graceful degradation if host API unavailable
+  }
+}
+
+function showStatusBanner(msg) {
+  const banner = document.getElementById(`status-banner`);
+  const text = document.getElementById(`status-banner-text`);
+  if (banner && text) {
+    text.textContent = msg;
+    banner.classList.add(`is-visible`);
+  }
+}
+
+function hideStatusBanner() {
+  const banner = document.getElementById(`status-banner`);
+  if (banner) banner.classList.remove(`is-visible`);
+}
+
+function setZoneFilter(zone) {
+  appState.activeZone = zone;
+  if (zone === `1` || zone === `2` || zone === `4`) focusMapRegion(`front`);
+  else if (zone === `3` || zone === `5`) focusMapRegion(`back`);
+  else focusMapRegion(`overview`);
+  renderAll();
+  persistState();
+}
+
+function setTagFilter(tag) {
+  appState.activeTag = tag;
+  renderAll();
+  persistState();
+}
+
+function onSearchInput(val) {
+  appState.searchQuery = val || ``;
+  renderAll();
+  persistState();
+}
+
+function toggleOnlyFavorites() {
+  appState.onlyFavorites = !appState.onlyFavorites;
+  renderAll();
+  persistState();
+}
+
+function resetAllFilters() {
+  appState.activeZone = `all`;
+  appState.activeTag = `all`;
+  appState.searchQuery = ``;
+  appState.onlyFavorites = false;
+  focusMapRegion(`overview`);
+  hideStatusBanner();
+  renderAll();
+  persistState();
+}
+
+function selectShop(id, scrollTopInspector) {
+  appState.selectedId = id;
+  renderAll();
+  persistState();
+  if (scrollTopInspector) {
+    const el = document.getElementById(`shop-inspector`);
+    if (el) el.scrollIntoView({ behavior: `smooth`, block: `nearest` });
+  }
+}
+
+function stepSelectedShop(delta) {
+  const filtered = getFilteredShops();
+  const list = filtered.length > 0 ? filtered : SHOPS;
+  const idx = list.findIndex(s => s.id === appState.selectedId);
+  const nextIdx = idx < 0 ? 0 : (idx + delta + list.length) % list.length;
+  selectShop(list[nextIdx].id, false);
+}
+
+function scrollToCardSelected() {
+  const el = document.getElementById(`shop-card-${appState.selectedId}`);
+  if (el) el.scrollIntoView({ behavior: `smooth`, block: `center` });
+}
+
+function toggleFavorite(id) {
+  const idx = appState.favorites.indexOf(id);
+  if (idx >= 0) {
+    appState.favorites.splice(idx, 1);
+  } else {
+    appState.favorites.push(id);
+  }
+  renderAll();
+  persistState();
+}
+
+function toggleFavoriteSelected() {
+  toggleFavorite(appState.selectedId);
+}
+
+function focusMapRegion(region) {
+  const svg = document.getElementById(`shulin-map-svg`);
+  if (!svg) return;
+  if (region === `front`) {
+    svg.setAttribute(`viewBox`, `330 85 450 320`);
+  } else if (region === `back`) {
+    svg.setAttribute(`viewBox`, `20 155 430 355`);
+  } else {
+    svg.setAttribute(`viewBox`, `0 0 800 520`);
+  }
+}
+
+function applyPresetRoute(routeKey) {
+  const routes = {
+    halfday: {
+      ids: [11, 6, 9, 22, 7, 1, 2, 3, 5],
+      label: `已載入「樹林車站半日美食巡禮」共 9 家推薦店家至您的收藏清單！`
+    },
+    fullday: {
+      ids: [21, 17, 16, 20, 1, 3, 2, 10],
+      label: `已載入「樹林慢活一日遊（紅磚萌寵 × 秀泰 × 宵夜）」共 8 家推薦店家至您的收藏清單！`
+    }
+  };
+  const chosen = routes[routeKey];
+  if (!chosen) return;
+
+  chosen.ids.forEach(id => {
+    if (!appState.favorites.includes(id)) appState.favorites.push(id);
+  });
+  appState.onlyFavorites = true;
+  renderAll();
+  persistState();
+  showStatusBanner(chosen.label);
+  window.scrollTo({ top: 0, behavior: `smooth` });
+}
+
+function exportFavoritesCsv() {
+  const exportList = appState.favorites.length > 0
+    ? SHOPS.filter(s => appState.favorites.includes(s.id))
+    : getFilteredShops();
+
+  if (exportList.length === 0) {
+    showStatusBanner(`目前沒有可匯出的店家，請先收藏店家或調整篩選條件。`);
+    return;
+  }
+
+  const header = [`編號`, `分區`, `店名`, `地址`, `必點餐點`, `店家亮點`];
+  const rows = exportList.map(s => [
+    s.code,
+    ZONES[s.zone].name,
+    s.name,
+    s.address,
+    s.dishes.join(` / `),
+    s.highlight
+  ].map(cell => `"${String(cell).replace(/"/g, `""`)}"`).join(`,`));
+
+  const csvContent = `\uFEFF` + [header.join(`,`), ...rows].join(`\n`);
+
+  if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === `function`) {
+    window.notebookAppApi.triggerFileDownload({
+      content: csvContent,
+      contentType: `text/csv`,
+      encoding: `UTF-8`,
+      filename: `shulin_food_walk_list.csv`
+    });
+    showStatusBanner(`已匯出 ${exportList.length} 家樹林美食清單（shulin_food_walk_list.csv）。`);
+  } else {
+    showStatusBanner(`已整理 ${exportList.length} 家樹林美食清單資料，準備就緒。`);
+  }
+}
+
+// =========================================================================
+// 7. INITIALIZATION
+// =========================================================================
+async function initApp() {
+  try {
+    if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === `function`) {
+      const saved = await window.notebookAppApi.getAppState();
+      if (saved && typeof saved === `object`) {
+        if (saved.activeZone !== undefined) appState.activeZone = saved.activeZone;
+        if (saved.activeTag !== undefined) appState.activeTag = saved.activeTag;
+        if (typeof saved.searchQuery === `string`) appState.searchQuery = saved.searchQuery;
+        if (typeof saved.onlyFavorites === `boolean`) appState.onlyFavorites = saved.onlyFavorites;
+        if (typeof saved.selectedId === `number`) appState.selectedId = saved.selectedId;
+        if (Array.isArray(saved.favorites)) appState.favorites = saved.favorites;
+      }
+    }
+  } catch (err) {
+    // Fallback to initial defaults
+  }
+
+  loadPhotoStore();
+  renderAll();
+  initBreakdownChart();
+
+  if (window.lucide && typeof window.lucide.createIcons === `function`) {
+    window.lucide.createIcons();
+  }
+
+  if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === `function`) {
+    window.notebookAppApi.notifyAppReady();
+  }
+}
+
+document.addEventListener(`DOMContentLoaded`, initApp);
+</script>
+</body>
+</html>
